@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Input, Space, message } from "antd";
-import api from "../../servicios/api";
+import { Button, Form, Input, Modal, Space, Table, message } from "antd";
 import dayjs from "dayjs";
+import { useEffect, useState } from "react";
+import { api } from "../../servicios";
 
 interface TablaCrudProps {
   endpoint: string;

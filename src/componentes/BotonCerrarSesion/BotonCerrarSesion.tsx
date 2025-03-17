@@ -1,6 +1,5 @@
-import React from "react";
 import { Button, message } from "antd";
-import api from "../../servicios/api";
+import { api } from "../../servicios";
 
 interface BotonCerrarSesionProps {
   onCerrarSesion: () => void;

@@ -1,14 +1,20 @@
-import { Image, Layout, Menu, Spin } from "antd";
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
+import { Layout, Spin, Menu, Image } from "antd";
+import { api } from "./servicios";
 import { BotonCerrarSesion, FormularioLogin, RutaPrivada } from "./componentes";
-import api from "./servicios/api";
-import { ABM, PaginaPrincipal } from "./paginas";
+import { ABM, PaginaPrincipal, Usuarios } from "./paginas";
 
 const { Header, Content } = Layout;
 
+export interface Usuario {
+  username: string;
+  is_staff: boolean;
+  is_superuser: boolean;
+}
+
 const App: React.FC = () => {
-  const [usuario, setUsuario] = useState<string | null>(null);
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargandoUsuario, setCargandoUsuario] = useState(true);
 
   useEffect(() => {
@@ -16,12 +22,10 @@ const App: React.FC = () => {
       .get("/api/usuario_actual/")
       .then((respuesta) => {
         if (respuesta.data.username) {
-          setUsuario(respuesta.data.username);
+          setUsuario(respuesta.data);
         }
       })
-      .catch(() => {
-        setUsuario(null);
-      })
+      .catch(() => setUsuario(null))
       .finally(() => setCargandoUsuario(false));
   }, []);
 
@@ -35,36 +39,38 @@ const App: React.FC = () => {
 
   return (
     <BrowserRouter>
-      <Layout style={{ height: "100vh", width: "100vw" }}>
+      <Layout style={{ width: "100vw", height: "100vh" }}>
         <Header
           style={{
             display: "flex",
             alignItems: "center",
-            width: "100%",
             justifyContent: "space-between",
+            padding: "0 20px",
           }}
         >
-          <Image
-            src="/logo.svg"
-            preview={false}
-            width={"10%"}
-            style={{ flex: 1 }}
-          />
+          <div style={{ flex: 1 }}>
+            <Image
+              src="/logo.svg"
+              preview={false}
+              style={{ width: 150, marginRight: "20px" }}
+            />
+          </div>
           {usuario && (
             <Menu
               theme="dark"
               mode="horizontal"
-              style={{ flex: 3, marginLeft: "20px" }}
+              style={{ width: "100%" }}
               items={[
+                { key: "inicio", label: <Link to="/">Inicio</Link> },
+                { key: "abm", label: <Link to="/abm">Gestión (CRUD)</Link> },
+                { key: "grafico", label: <Link to="/grafico">Cartilla</Link> },
                 {
-                  key: "inicio",
-                  label: <Link to="/">Inicio</Link>,
+                  key: "usuarios",
+                  label: usuario.is_staff ? (
+                    <Link to="/usuarios">Usuarios</Link>
+                  ) : null,
                 },
-                {
-                  key: "abm",
-                  label: <Link to="/abm">Gestión (CRUD)</Link>,
-                },
-              ]}
+              ].filter((item) => item.label !== null)}
             />
           )}
           <BotonCerrarSesion onCerrarSesion={() => setUsuario(null)} />
@@ -86,13 +92,18 @@ const App: React.FC = () => {
                 path="/"
                 element={
                   <PaginaPrincipal
-                    usuario={usuario!}
+                    usuario={usuario ? usuario!.username : ""}
                     onCerrarSesion={() => setUsuario(null)}
                   />
                 }
               />
               <Route path="/abm" element={<ABM />} />
+              <Route
+                path="/usuarios"
+                element={<Usuarios usuario={usuario} />}
+              />
             </Route>
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Content>
       </Layout>

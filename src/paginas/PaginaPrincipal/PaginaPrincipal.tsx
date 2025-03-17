@@ -1,4 +1,3 @@
-import React from "react";
 import { Typography } from "antd";
 import { BotonCerrarSesion } from "../../componentes";
 
@@ -14,7 +13,7 @@ const PaginaPrincipal: React.FC<PaginaPrincipalProps> = ({
   onCerrarSesion,
 }) => {
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
+    <div style={{ textAlign: "center" }}>
       <Title level={2}>Bienvenido, {usuario}</Title>
       <BotonCerrarSesion onCerrarSesion={onCerrarSesion} />
     </div>

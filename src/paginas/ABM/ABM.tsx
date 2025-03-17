@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Select, Typography } from "antd";
 import { TablaCrud } from "../../componentes";
 
