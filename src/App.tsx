@@ -3,14 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { Layout, Spin, Menu, Image } from "antd";
 import { api } from "./servicios";
 import { BotonCerrarSesion, FormularioLogin, RutaPrivada } from "./componentes";
-import { ABM, PaginaPrincipal, Usuarios } from "./paginas";
+import { ABM, Cartilla, PaginaPrincipal, Usuarios } from "./paginas";
 
 const { Header, Content } = Layout;
 
 export interface Usuario {
   username: string;
   is_staff: boolean;
-  is_superuser: boolean;
 }
 
 const App: React.FC = () => {
@@ -98,10 +97,8 @@ const App: React.FC = () => {
                 }
               />
               <Route path="/abm" element={<ABM />} />
-              <Route
-                path="/usuarios"
-                element={<Usuarios usuario={usuario} />}
-              />
+              <Route path="/usuarios" element={<Usuarios usuario={usuario} />} />
+              <Route path="/grafico" element={<Cartilla />} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
