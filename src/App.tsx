@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
-import { Layout, Spin, Menu, Image } from "antd";
-import { api } from "./servicios";
-import { BotonCerrarSesion, FormularioLogin, RutaPrivada } from "./componentes";
+import { Image, Layout, Spin } from "antd";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import {
+  BotonCerrarSesion,
+  FormularioLogin,
+  MenuNavegacion,
+  RutaPrivada,
+} from "./componentes";
 import { ABM, Cartilla, PaginaPrincipal, Usuarios } from "./paginas";
+import { api } from "./servicios";
 
 const { Header, Content } = Layout;
 
@@ -54,24 +59,7 @@ const App: React.FC = () => {
               style={{ width: 150, marginRight: "20px" }}
             />
           </div>
-          {usuario && (
-            <Menu
-              theme="dark"
-              mode="horizontal"
-              style={{ width: "100%" }}
-              items={[
-                { key: "inicio", label: <Link to="/">Inicio</Link> },
-                { key: "abm", label: <Link to="/abm">Gestión (CRUD)</Link> },
-                { key: "grafico", label: <Link to="/grafico">Cartilla</Link> },
-                {
-                  key: "usuarios",
-                  label: usuario.is_staff ? (
-                    <Link to="/usuarios">Usuarios</Link>
-                  ) : null,
-                },
-              ].filter((item) => item.label !== null)}
-            />
-          )}
+          {usuario && <MenuNavegacion usuario={usuario} />}
           <BotonCerrarSesion onCerrarSesion={() => setUsuario(null)} />
         </Header>
         <Content style={{ padding: "24px" }}>
@@ -97,7 +85,10 @@ const App: React.FC = () => {
                 }
               />
               <Route path="/abm" element={<ABM />} />
-              <Route path="/usuarios" element={<Usuarios usuario={usuario} />} />
+              <Route
+                path="/usuarios"
+                element={<Usuarios usuario={usuario} />}
+              />
               <Route path="/grafico" element={<Cartilla />} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />

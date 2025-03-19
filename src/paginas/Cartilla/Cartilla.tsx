@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   Button,
   Col,
@@ -11,7 +10,9 @@ import {
   message,
 } from "antd";
 import dayjs from "dayjs";
-import api from "../../servicios/api";
+import { useState } from "react";
+import { api } from "../../servicios";
+import { Line } from "@ant-design/charts";
 
 const { Title } = Typography;
 const { Item } = Form;
@@ -48,7 +49,16 @@ const Cartilla: React.FC = () => {
     api
       .get("/api/valores/filtrar/", { params })
       .then((res) => {
-        setDatos(res.data);
+        if (!res.data) {
+          message.error("No se encontraron datos");
+          return;
+        }
+        let datos = res.data.map((d: any) => ({
+          id: d.id,
+          fecha: dayjs(d.fecha).format("DD-MM-YYYY HH:mm:ss"),
+          valor: d.valor,
+        }));
+        setDatos(datos);
       })
       .catch((err) => {
         console.error(err);
@@ -65,7 +75,6 @@ const Cartilla: React.FC = () => {
       title: "Fecha",
       dataIndex: "fecha",
       key: "fecha",
-      render: (texto: string) => dayjs(texto).format("DD/MM/YYYY HH:mm:ss"),
     },
     {
       title: "Valor",
@@ -74,9 +83,28 @@ const Cartilla: React.FC = () => {
     },
   ];
 
+  const config = {
+    data: datos,
+    width: 900,
+    height: 400,
+    xField: "fecha",
+    yField: "valor",
+    interaction: {
+      tooltip: {
+        render: (e, { fecha, valor }) => {
+          return valor;
+        },
+      },
+    },
+    slider: {
+      x: 1,
+      y: 1,
+    },
+  };
+
   return (
-    <Row gutter={16}>
-      <Col xs={24} md={12}>
+    <Row>
+      <Col span={12}>
         <Title level={2}>Cartilla de Valores</Title>
         <Divider />
         <Form form={form} layout="vertical" onFinish={solicitarCartilla}>
@@ -94,9 +122,12 @@ const Cartilla: React.FC = () => {
           </Button>
         </Form>
       </Col>
-      <Col xs={24} md={12}>
-        <Title level={2}>Resultados</Title>
+      <Col span={12}>
+        <Line style={{ width: "100%" }} {...config} />
+      </Col>
+      <Col span={24}>
         <Table
+          style={{ width: "100%" }}
           dataSource={datos}
           columns={columnas}
           rowKey="id"
