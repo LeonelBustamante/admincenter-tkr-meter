@@ -1,9 +1,9 @@
-// src/componentes/FormularioLogin/FormularioLogin.tsx
-import React, { useState } from "react";
-import { Form, Input, Button, message } from "antd";
+import { useState } from "react";
+import { Form, Input, Button, message, Typography } from "antd";
 import { Usuario } from "../../App";
 import { api } from "../../servicios";
 
+const { Link } = Typography;
 interface FormularioLoginProps {
   onLogin: (usuario: Usuario) => void;
 }
@@ -27,29 +27,34 @@ const FormularioLogin: React.FC<FormularioLoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <Form
-      name="login"
-      onFinish={onFinish}
-      style={{ maxWidth: 300, margin: "0 auto", marginTop: "100px" }}
-    >
-      <Form.Item
-        name="username"
-        rules={[{ required: true, message: "Ingresa tu usuario!" }]}
+    <>
+      <Form
+        name="login"
+        onFinish={onFinish}
+        style={{ maxWidth: 300, margin: "0 auto", marginTop: "100px" }}
       >
-        <Input placeholder="Usuario" />
-      </Form.Item>
-      <Form.Item
-        name="password"
-        rules={[{ required: true, message: "Ingresa tu contraseña!" }]}
-      >
-        <Input.Password placeholder="Contraseña" />
-      </Form.Item>
-      <Form.Item>
-        <Button type="primary" htmlType="submit" loading={cargando} block>
-          Iniciar sesión
-        </Button>
-      </Form.Item>
-    </Form>
+        <Form.Item
+          name="username"
+          rules={[{ required: true, message: "Ingresa tu usuario!" }]}
+        >
+          <Input placeholder="Usuario" />
+        </Form.Item>
+        <Form.Item
+          name="password"
+          rules={[{ required: true, message: "Ingresa tu contraseña!" }]}
+        >
+          <Input.Password placeholder="Contraseña" />
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" loading={cargando} block>
+            Iniciar sesión
+          </Button>
+        </Form.Item>
+      </Form>
+      <div style={{ maxWidth: 300, margin: "0 auto", marginTop: "10px" }}>
+        <Link href="http://localhost:8000/password-reset">¿Olvidaste tu contraseña?</Link>
+      </div>
+    </>
   );
 };
 
