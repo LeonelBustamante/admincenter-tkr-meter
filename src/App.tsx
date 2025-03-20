@@ -59,8 +59,12 @@ const App: React.FC = () => {
               style={{ width: 150, marginRight: "20px" }}
             />
           </div>
-          {usuario && <MenuNavegacion usuario={usuario} />}
-          <BotonCerrarSesion onCerrarSesion={() => setUsuario(null)} />
+          {usuario && (
+            <>
+              <MenuNavegacion usuario={usuario} />
+              <BotonCerrarSesion onCerrarSesion={() => setUsuario(null)} />
+            </>
+          )}
         </Header>
         <Content style={{ padding: "24px" }}>
           <Routes>
