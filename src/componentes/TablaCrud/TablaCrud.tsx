@@ -137,6 +137,18 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint }) => {
         <Button type="link" danger onClick={() => handleEliminar(registro.id)}>
           Eliminar
         </Button>
+        {endpoint.includes("ubicaciones") && (
+          <Button
+            type="link"
+            onClick={() =>
+              window.open(
+                `https://www.google.com/maps/search/?api=1&query=${registro.latitud},${registro.longitud}`
+              )
+            }
+          >
+            Ver en mapa
+          </Button>
+        )}
       </Space>
     ),
   });

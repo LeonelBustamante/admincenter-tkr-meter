@@ -8,9 +8,10 @@ const ABM: React.FC = () => {
   // Opciones para los distintos endpoints
   const opciones = [
     { label: "Canales", value: "/api/canales/" },
-    { label: "Equipos", value: "/api/equipos/" },
     { label: "Empresas", value: "/api/empresas/" },
+    { label: "Equipos", value: "/api/equipos/" },
     { label: "Notas", value: "/api/notas/" },
+    { label: "Ubicaciones", value: "/api/ubicaciones/" },
   ];
 
   const [endpoint, setEndpoint] = useState<string>(opciones[0].value);
