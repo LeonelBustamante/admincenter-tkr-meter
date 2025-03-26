@@ -1,10 +1,11 @@
 import { Typography } from "antd";
 import { BotonCerrarSesion } from "../../componentes";
+import { Usuario } from "../../App";
 
 const { Title } = Typography;
 
 interface PaginaPrincipalProps {
-  usuario: string;
+  usuario: Usuario;
   onCerrarSesion: () => void;
 }
 
@@ -14,7 +15,11 @@ const PaginaPrincipal: React.FC<PaginaPrincipalProps> = ({
 }) => {
   return (
     <div style={{ textAlign: "center" }}>
-      <Title level={2}>Bienvenido, {usuario}</Title>
+      <Title level={2}>
+        {usuario.nombre && usuario.apellido
+          ? `Bienvenido, ${usuario.nombre} ${usuario.apellido}`
+          : `Bienvenido, ${usuario.username}`}
+      </Title>
       <BotonCerrarSesion onCerrarSesion={onCerrarSesion} />
     </div>
   );

@@ -28,11 +28,11 @@ interface UsuarioData {
 }
 
 const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
-  // Si el usuario no es admin, redirigimos
-  if (!usuario || !usuario.is_staff) {
-    return <Navigate to="/" />;
+  // Si no hay usuario, mostramos un spinner o redirigimos
+  if (!usuario) {
+    return <Navigate to="/login" />;
   }
-
+  const [messageAPI, contextHolder] = message.useMessage();
   const [usuarios, setUsuarios] = useState<UsuarioData[]>([]);
   const [cargando, setCargando] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -46,12 +46,9 @@ const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
     api
       .get("/api/usuarios/")
       .then((res) => {
-        let listaUsuarios = res.data.filter(
-          (usuario: UsuarioData) => usuario.id !== 1
-        );
-        setUsuarios(listaUsuarios);
+        setUsuarios(res.data);
       })
-      .catch(() => message.error("Error al cargar usuarios"))
+      .catch(() => messageAPI.error("Error al cargar usuarios"))
       .finally(() => setCargando(false));
   };
 
@@ -80,10 +77,10 @@ const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
         api
           .delete(`/api/usuarios/${id}/`)
           .then(() => {
-            message.success("Usuario eliminado");
+            messageAPI.success("Usuario eliminado");
             cargarUsuarios();
           })
-          .catch(() => message.error("Error al eliminar usuario"));
+          .catch(() => messageAPI.error("Error al eliminar usuario"));
       },
     });
   };
@@ -94,20 +91,20 @@ const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
         api
           .post("/api/usuarios/", values)
           .then(() => {
-            message.success("Usuario creado");
+            messageAPI.success("Usuario creado");
             cargarUsuarios();
             setModalVisible(false);
           })
-          .catch(() => message.error("Error al crear usuario"));
+          .catch(() => messageAPI.error("Error al crear usuario"));
       } else if (modalTipo === "editar" && usuarioSeleccionado) {
         api
           .put(`/api/usuarios/${usuarioSeleccionado.id}/`, values)
           .then(() => {
-            message.success("Usuario actualizado");
+            messageAPI.success("Usuario actualizado");
             cargarUsuarios();
             setModalVisible(false);
           })
-          .catch(() => message.error("Error al actualizar usuario"));
+          .catch(() => messageAPI.error("Error al actualizar usuario"));
       }
     });
   };
@@ -125,13 +122,15 @@ const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
           <Button type="link" onClick={() => handleEditar(registro)}>
             Editar
           </Button>
-          <Button
-            type="link"
-            danger
-            onClick={() => handleEliminar(registro.id)}
-          >
-            Eliminar
-          </Button>
+          {usuario.is_staff && (
+            <Button
+              type="link"
+              danger
+              onClick={() => handleEliminar(registro.id)}
+            >
+              Eliminar
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -139,14 +138,19 @@ const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
 
   return (
     <>
-      <Title level={2}>Gestión de Usuarios</Title>
-      <Button
-        type="primary"
-        onClick={handleCrear}
-        style={{ marginBottom: "16px" }}
-      >
-        Crear Usuario
-      </Button>
+      {contextHolder}
+      <Title level={2}>
+        {usuario.is_staff ? "Gestión de Usuarios" : "Mi Perfil"}
+      </Title>
+      {usuario.is_staff && (
+        <Button
+          type="primary"
+          onClick={handleCrear}
+          style={{ marginBottom: "16px" }}
+        >
+          Crear Usuario
+        </Button>
+      )}
       <Table
         dataSource={usuarios}
         columns={columnas}
@@ -165,14 +169,14 @@ const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
             label="Usuario"
             rules={[{ required: true }]}
           >
-            <Input />
+            <Input disabled={!usuario.is_staff} />
           </Form.Item>
           <Form.Item
             name="email"
             label="Email"
             rules={[{ required: true, type: "email" }]}
           >
-            <Input />
+            <Input disabled={!usuario.is_staff} />
           </Form.Item>
           <Form.Item name="first_name" label="Nombre">
             <Input />

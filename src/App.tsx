@@ -1,4 +1,5 @@
-import { Image, Layout, Spin } from "antd";
+import { Image, Layout, Result, Typography } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import {
@@ -7,13 +8,17 @@ import {
   MenuNavegacion,
   RutaPrivada,
 } from "./componentes";
-import { ABM, Cartilla, PaginaPrincipal, Usuarios } from "./paginas";
+import { ABM, Cartilla, PaginaPrincipal, RT, Usuarios } from "./paginas";
 import { api } from "./servicios";
 
 const { Header, Content } = Layout;
+const { Text } = Typography;
 
 export interface Usuario {
+  id: number;
   username: string;
+  nombre: string;
+  apellido: string;
   is_staff: boolean;
 }
 
@@ -35,8 +40,16 @@ const App: React.FC = () => {
 
   if (cargandoUsuario) {
     return (
-      <div style={{ textAlign: "center", marginTop: "100px" }}>
-        <Spin size="large" />
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Result icon={<LoadingOutlined />} title="Cargando..." />
       </div>
     );
   }
@@ -61,7 +74,19 @@ const App: React.FC = () => {
           </div>
           {usuario && (
             <>
-              <MenuNavegacion usuario={usuario} />
+              <MenuNavegacion />
+              <Text
+                style={{
+                  color: "white",
+                  width: "500px",
+                  textAlign: "end",
+                  marginRight: "20px",
+                }}
+              >
+                {usuario.nombre && usuario.apellido
+                  ? `Bienvenido, ${usuario.nombre} ${usuario.apellido}`
+                  : `Bienvenido, ${usuario.username}`}
+              </Text>
               <BotonCerrarSesion onCerrarSesion={() => setUsuario(null)} />
             </>
           )}
@@ -83,7 +108,7 @@ const App: React.FC = () => {
                 path="/"
                 element={
                   <PaginaPrincipal
-                    usuario={usuario ? usuario!.username : ""}
+                    usuario={usuario!}
                     onCerrarSesion={() => setUsuario(null)}
                   />
                 }
@@ -94,6 +119,7 @@ const App: React.FC = () => {
                 element={<Usuarios usuario={usuario} />}
               />
               <Route path="/grafico" element={<Cartilla />} />
+              <Route path="/rt" element={<RT />} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

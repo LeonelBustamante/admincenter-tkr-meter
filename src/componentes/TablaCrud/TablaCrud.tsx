@@ -20,6 +20,7 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint }) => {
   const [elementoSeleccionado, setElementoSeleccionado] =
     useState<Elemento | null>(null);
   const [form] = Form.useForm();
+  const [messageAPI, contextHolder] = message.useMessage();
 
   // Función para formatear el título de la columna
   const formatearHeaderTable = (key: string) => {
@@ -38,7 +39,7 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint }) => {
         setDatos(response.data);
       })
       .catch(() => {
-        message.error("Error al cargar datos");
+        messageAPI.error("Error al cargar datos");
       })
       .finally(() => {
         setCargando(false);
@@ -70,11 +71,11 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint }) => {
         api
           .delete(`${endpoint}${id}/`)
           .then(() => {
-            message.success("Registro eliminado");
+            messageAPI.success("Registro eliminado");
             cargarDatos();
           })
           .catch(() => {
-            message.error("Error al eliminar");
+            messageAPI.error("Error al eliminar");
           });
       },
     });
@@ -86,23 +87,23 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint }) => {
         api
           .post(endpoint, values)
           .then(() => {
-            message.success("Registro creado");
+            messageAPI.success("Registro creado");
             cargarDatos();
             setModalVisible(false);
           })
           .catch(() => {
-            message.error("Error al crear");
+            messageAPI.error("Error al crear");
           });
       } else if (modalTipo === "editar" && elementoSeleccionado) {
         api
           .put(`${endpoint}${elementoSeleccionado.id}/`, values)
           .then(() => {
-            message.success("Registro actualizado");
+            messageAPI.success("Registro actualizado");
             cargarDatos();
             setModalVisible(false);
           })
           .catch(() => {
-            message.error("Error al actualizar");
+            messageAPI.error("Error al actualizar");
           });
       }
     });
@@ -142,6 +143,7 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint }) => {
 
   return (
     <>
+      {contextHolder}
       <Button
         type="primary"
         onClick={handleCrear}
