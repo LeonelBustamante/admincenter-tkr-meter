@@ -113,7 +113,10 @@ const App: React.FC = () => {
                   />
                 }
               />
-              <Route path="/abm" element={<ABM />} />
+              <Route
+                path="/abm"
+                element={<ABM isStaff={usuario?.is_staff} />}
+              />
               <Route
                 path="/usuarios"
                 element={<Usuarios usuario={usuario} />}

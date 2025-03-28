@@ -5,6 +5,7 @@ import { api } from "../../servicios";
 
 interface TablaCrudProps {
   endpoint: string;
+  isStaff: boolean;
 }
 
 interface Elemento {
@@ -12,7 +13,7 @@ interface Elemento {
   [key: string]: any;
 }
 
-const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint }) => {
+const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, isStaff }) => {
   const [datos, setDatos] = useState<Elemento[]>([]);
   const [cargando, setCargando] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -156,13 +157,15 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint }) => {
   return (
     <>
       {contextHolder}
-      <Button
-        type="primary"
-        onClick={handleCrear}
-        style={{ marginBottom: "16px" }}
-      >
-        Crear nuevo registro
-      </Button>
+      {isStaff && (
+        <Button
+          type="primary"
+          onClick={handleCrear}
+          style={{ marginBottom: "16px" }}
+        >
+          Crear nuevo registro
+        </Button>
+      )}
       <Table
         dataSource={datos}
         columns={columnas}

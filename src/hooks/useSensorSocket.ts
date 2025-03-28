@@ -6,7 +6,7 @@ interface IRespuesta {
   value: number[];
 }
 
-const socket: Socket = io("http://localhost:5000", {
+const socket: Socket = io("http://192.168.2.104:5000", {
   transports: ["websocket"],
 });
 
