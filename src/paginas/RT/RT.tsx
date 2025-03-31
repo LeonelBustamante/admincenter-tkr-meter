@@ -1,59 +1,70 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import { Col, message, Result, Row, Typography } from "antd";
+import { message, Result, Select, Typography } from "antd";
 import { useEffect, useState } from "react";
-import { SensorCard } from "../../componentes";
 import { api } from "../../servicios";
-import useSensorSocket from "../../hooks/useSensorSocket";
+import { DashboardRT } from "../../componentes";
 
 const { Title } = Typography;
 
 const RT: React.FC = () => {
-  const [canales, setCanales] = useState<any[]>([]);
-  const [cargando, setCargando] = useState<boolean>(false);
-  const { datos, loading, error } = useSensorSocket();
+    const [equipos, setEquipo] = useState<any[]>([]);
+    const [equipoSeleccionado, setEquipoSeleccionado] = useState<any>();
+    const [cargando, setCargando] = useState<boolean>(false);
+    const [error, setError] = useState<boolean>(false);
 
-  const cargarCanales = () => {
-    setCargando(true);
-    api
-      .get("/api/canales/")
-      .then((response) => {
-        setCanales(response.data);
-      })
-      .catch(() => {
-        message.error("Error al cargar datos");
-      })
-      .finally(() => {
-        setCargando(false);
-      });
-  };
+    const cargarCanales = () => {
+        setCargando(true);
+        api.get("/api/equipos/") // ACA DEBO CONSULTAR QUE CANALES CORRESPONDEN AL PLC
+            .then((response) => {
+                setEquipo(response.data);
+            })
+            .catch(() => {
+                message.error("Error al cargar datos");
+                setError(true);
+            })
+            .finally(() => {
+                setCargando(false);
+            });
+    };
 
-  useEffect(() => {
-    cargarCanales();
-  }, []);
+    useEffect(() => {
+        cargarCanales();
+    }, []);
 
-  
-  return (
-    <>
-      {error && <Result status="error" title="Error al cargar datos" />}
-      {cargando && <Result icon={<LoadingOutlined />} title="Cargando..." />}
-      {!cargando && !error && (
+    return (
         <>
-          <Title level={2}>Telemetria</Title>
-          <Row gutter={[16, 16]}>
-            {canales.map((canal) => (
-              <Col key={canal.id} xs={24} sm={12} md={8} lg={8}>
-                <SensorCard
-                  canal={canal}
-                  cargando={loading}
-                  ultimoValor={datos?.value[canal.posicion - 1]}
-                />
-              </Col>
-            ))}
-          </Row>
+            {error && <Result status="error" title="Error al cargar datos" />}
+            {cargando && (
+                <Result icon={<LoadingOutlined />} title="Cargando..." />
+            )}
+            {!cargando && !error && (
+                <>
+                    <Title level={2}>Telemetria</Title>
+                    <Select
+                        size="large"
+                        placeholder="Seleccionar PLC"
+                        onChange={(value) => {
+                            console.log(value);
+
+                            setEquipoSeleccionado(value);
+                        }}
+                    >
+                        {equipos.map((equipo) => (
+                            <Select.Option
+                                key={equipo.id}
+                                value={equipo.nombre}
+                            >
+                                {equipo.nombre}
+                            </Select.Option>
+                        ))}
+                    </Select>
+                    {equipoSeleccionado && (
+                        <DashboardRT nombre_equipo={equipoSeleccionado} />
+                    )}
+                </>
+            )}
         </>
-      )}
-    </>
-  );
+    );
 };
 
 export default RT;

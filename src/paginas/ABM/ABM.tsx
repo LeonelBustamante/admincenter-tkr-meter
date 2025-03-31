@@ -14,9 +14,10 @@ const ABM: React.FC<IABM> = ({ isStaff }) => {
     ? [{ label: "Canales", value: "/api/canales/" }]
     : [
         { label: "Canales", value: "/api/canales/" },
-        { label: "Empresas", value: "/api/empresas/" },
+        { label: "Empresas", value: "/api/clientes/" },
         { label: "Equipos", value: "/api/equipos/" },
         { label: "Notas", value: "/api/notas/" },
+        { label: "PLC", value: "/api/plcs/" },
         { label: "Ubicaciones", value: "/api/ubicaciones/" },
       ];
 
