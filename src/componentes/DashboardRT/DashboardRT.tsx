@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { SensorCard } from "../../componentes";
 import { api } from "../../servicios";
 import useSensorSocket from "../../hooks/useSensorSocket";
+import { ICanal, IPlcs } from "../../types";
 
 const { Title } = Typography;
 
@@ -12,8 +13,8 @@ interface DashboardRTProps {
 }
 
 const DashboardRT: React.FC<DashboardRTProps> = ({ nombre_equipo }) => {
-    const [canales, setCanales] = useState<any[]>([]);
-    const [plc, setPlc] = useState<any>(null);
+    const [canales, setCanales] = useState<ICanal[]>([]);
+    const [plc, setPlc] = useState<IPlcs>();
     const [cargando, setCargando] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const {
@@ -53,6 +54,13 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ nombre_equipo }) => {
             const canalesResponse = await api.get(
                 `/api/canales/?plc_id=${plcData.id}`
             );
+
+            if (!canalesResponse.data.length) {
+                setError("No se encontraron canales para este PLC");
+                setCargando(false);
+                return;
+            }
+
             setCanales(canalesResponse.data);
             console.log("Canales cargados:", canalesResponse.data);
         } catch (err) {
@@ -99,13 +107,9 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ nombre_equipo }) => {
                                     <SensorCard
                                         canal={canal}
                                         cargando={socketLoading}
-                                        /* 
-                                            datos?.value && canal.posicion > 0
-                                                ? datos.value[
-                                                      canal.posicion - 1
-                                                  ]
-                                                : */
-                                        ultimoValor={0}
+                                        ultimoValor={
+                                            datos.value[canal.posicion - 1]
+                                        }
                                     />
                                 </Col>
                             ))
