@@ -2,57 +2,43 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { Col, message, Result, Row, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { SensorCard } from "../../componentes";
-import { api } from "../../servicios";
 import useSensorSocket from "../../hooks/useSensorSocket";
-import { ICanal, IPlcs } from "../../types";
+import { api } from "../../servicios";
+import { ICanal } from "../../types";
 
 const { Title } = Typography;
 
 interface DashboardRTProps {
-    nombre_equipo?: string;
+    ip_plc: string;
+    id_plc: number;
+    port_plc: number;
 }
 
-const DashboardRT: React.FC<DashboardRTProps> = ({ nombre_equipo }) => {
+const DashboardRT: React.FC<DashboardRTProps> = ({
+    ip_plc,
+    id_plc,
+    port_plc = 502,
+}) => {
     const [canales, setCanales] = useState<ICanal[]>([]);
-    const [plc, setPlc] = useState<IPlcs>();
     const [cargando, setCargando] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const {
         datos,
         loading: socketLoading,
         error: socketError,
-    } = useSensorSocket();
+    } = useSensorSocket(ip_plc, port_plc);
 
     // Función unificada para cargar datos de forma secuencial
     const cargarDatos = async () => {
-        if (!nombre_equipo) {
-            setError("Nombre de equipo no proporcionado");
-            setCargando(false);
-            return;
-        }
-
         setCargando(true);
         setError(null);
 
         try {
             // Paso 1: Cargar el PLC por nombre de equipo
-            const plcResponse = await api.get(
-                `/api/plcs/?equipo_nombre=${nombre_equipo}`
-            );
-
-            if (!plcResponse.data[0].id) {
-                setError("No se encontró el PLC para este equipo");
-                setCargando(false);
-                return;
-            }
-
-            const plcData = plcResponse.data[0];
-            setPlc(plcData);
-            console.log("PLC cargado:", plcData);
 
             // Paso 2: Cargar los canales del PLC usando su ID
             const canalesResponse = await api.get(
-                `/api/canales/?plc_id=${plcData.id}`
+                `/api/canales/?plc_id=${id_plc}`
             );
 
             if (!canalesResponse.data.length) {
@@ -62,7 +48,6 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ nombre_equipo }) => {
             }
 
             setCanales(canalesResponse.data);
-            console.log("Canales cargados:", canalesResponse.data);
         } catch (err) {
             console.error("Error al cargar datos:", err);
             setError("Error al cargar datos del sistema");
@@ -75,7 +60,7 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ nombre_equipo }) => {
     // Solo un useEffect para iniciar la carga secuencial
     useEffect(() => {
         cargarDatos();
-    }, [nombre_equipo]);
+    }, []);
 
     // Manejar casos de error
     if (error || socketError) {
@@ -91,9 +76,11 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ nombre_equipo }) => {
 
     return (
         <>
-            {plc ? (
+            {id_plc && ip_plc ? (
                 <>
-                    <Title level={2}>Telemetría de PLC ({plc.ip})</Title>
+                    <Title level={2}>
+                        Telemetría de PLC ({`${ip_plc}:${port_plc}`})
+                    </Title>
                     <Row gutter={[16, 16]}>
                         {canales.length > 0 ? (
                             canales.map((canal) => (

@@ -3,16 +3,16 @@ import { message, Result, Select, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { api } from "../../servicios";
 import { DashboardRT } from "../../componentes";
-import useSensorSocket from "../../hooks/useSensorSocket";
+import { IEquipo, IPlcs } from "../../types";
 
 const { Title } = Typography;
 
 const RT: React.FC = () => {
-    const [equipos, setEquipo] = useState<any[]>([]);
-    const [equipoSeleccionado, setEquipoSeleccionado] = useState<any>();
+    const [equipos, setEquipo] = useState<IEquipo[]>([]);
+    const [equipoSeleccionado, setEquipoSeleccionado] = useState<string>();
     const [cargando, setCargando] = useState<boolean>(false);
     const [error, setError] = useState<boolean>(false);
-    const { disconnect } = useSensorSocket();
+    const [plc, setPlc] = useState<IPlcs>();
 
     const cargarCanales = () => {
         setCargando(true);
@@ -29,9 +29,45 @@ const RT: React.FC = () => {
             });
     };
 
+    const obtenerIp = async () => {
+        setCargando(true);
+        try {
+            const plcResponse = await api.get(
+                `/api/plcs/?equipo_nombre=${equipoSeleccionado}`
+            );
+            if (!plcResponse.data.length) {
+                setError(true);
+                message.error("No se encontraron PLCs para este equipo");
+                return;
+            }
+            console.log("PLC cargado:", plcResponse.data[0]);
+            setPlc(plcResponse.data[0]);
+            setError(false);
+        } catch (error) {
+            setError(true);
+            message.error("Error al obtener datos del PLC");
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const handleEquipoChange = (value: string) => {
+        // Si hay un equipo seleccionado anteriormente, limpia el PLC
+        if (equipoSeleccionado) {
+            setPlc(undefined);
+        }
+
+        setEquipoSeleccionado(value);
+    };
+
     useEffect(() => {
         cargarCanales();
     }, []);
+
+    useEffect(() => {
+        if (!equipoSeleccionado) return;
+        obtenerIp();
+    }, [equipoSeleccionado]);
 
     return (
         <>
@@ -45,11 +81,7 @@ const RT: React.FC = () => {
                     <Select
                         size="large"
                         placeholder="Seleccionar PLC"
-                        onChange={(value) => {
-                            console.log("Cambio de selección:", value);
-                            setEquipoSeleccionado(value);
-                            disconnect();
-                        }}
+                        onChange={handleEquipoChange}
                     >
                         {equipos.map((equipo) => (
                             <Select.Option
@@ -60,8 +92,12 @@ const RT: React.FC = () => {
                             </Select.Option>
                         ))}
                     </Select>
-                    {equipoSeleccionado && (
-                        <DashboardRT nombre_equipo={equipoSeleccionado} />
+                    {equipoSeleccionado && plc && (
+                        <DashboardRT
+                            id_plc={plc?.id}
+                            ip_plc={plc?.ip}
+                            port_plc={plc?.port}
+                        />
                     )}
                 </>
             )}

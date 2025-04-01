@@ -1,4 +1,4 @@
-import { Card, Typography, Flex, Divider, Row, Col, Progress } from "antd";
+import { Card, Typography, Divider, Row, Col } from "antd";
 import { Gauge, Liquid, Tiny } from "@ant-design/charts";
 import { ICanal } from "../../types";
 
