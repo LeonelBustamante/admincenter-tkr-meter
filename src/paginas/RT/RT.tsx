@@ -3,6 +3,7 @@ import { message, Result, Select, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { api } from "../../servicios";
 import { DashboardRT } from "../../componentes";
+import useSensorSocket from "../../hooks/useSensorSocket";
 
 const { Title } = Typography;
 
@@ -11,6 +12,7 @@ const RT: React.FC = () => {
     const [equipoSeleccionado, setEquipoSeleccionado] = useState<any>();
     const [cargando, setCargando] = useState<boolean>(false);
     const [error, setError] = useState<boolean>(false);
+    const { disconnect } = useSensorSocket();
 
     const cargarCanales = () => {
         setCargando(true);
@@ -44,9 +46,9 @@ const RT: React.FC = () => {
                         size="large"
                         placeholder="Seleccionar PLC"
                         onChange={(value) => {
-                            console.log(value);
-
+                            console.log("Cambio de selección:", value);
                             setEquipoSeleccionado(value);
+                            disconnect();
                         }}
                     >
                         {equipos.map((equipo) => (
