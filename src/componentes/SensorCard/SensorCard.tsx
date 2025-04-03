@@ -3,7 +3,7 @@ import { Gauge, Liquid, Tiny } from "@ant-design/charts";
 import { ICanal } from "../../types";
 
 const { Meta } = Card;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 interface TablaCrudProps {
     canal: ICanal;
@@ -82,17 +82,21 @@ const SensorCard: React.FC<TablaCrudProps> = ({
         <Card
             loading={cargando}
             actions={[
-                <Text type="secondary">Mínimo {canal.valor_minimo}</Text>,
-                <Text type="secondary">Máximo {canal.valor_maximo}</Text>,
-                <Text type="secondary">Posicion {canal.posicion}</Text>,
+                <Text type="secondary" style={{ color: "green" }}>
+                    Mínimo {canal.valor_minimo}
+                </Text>,
+                <Text type="secondary" style={{ color: "red" }}>
+                    Máximo {canal.valor_maximo}
+                </Text>,
+                <Text type="secondary">Unidad {canal.unidad}</Text>,
             ]}
-            size="small"
+            size="default"
         >
             <Row gutter={[16, 16]}>
                 {/* lado izquierdo */}
                 <Col span={12}>
                     <Meta
-                        title={<Text strong>{canal.nombre}</Text>}
+                        title={<Title level={4}>{canal.nombre}</Title>}
                         description={<Text type="secondary">{canal.tipo}</Text>}
                     />
                     <Divider />

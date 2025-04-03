@@ -82,6 +82,7 @@ const RT: React.FC = () => {
                         size="large"
                         placeholder="Seleccionar PLC"
                         onChange={handleEquipoChange}
+                        style={{ width: "50%", marginBottom: 20 }}
                     >
                         {equipos.map((equipo) => (
                             <Select.Option

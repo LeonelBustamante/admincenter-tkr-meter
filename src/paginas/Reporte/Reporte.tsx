@@ -25,7 +25,7 @@ interface Valor {
   // Agrega otros campos si es necesario.
 }
 
-const Cartilla: React.FC = () => {
+const Reporte: React.FC = () => {
   const [form] = Form.useForm();
   const [datos, setDatos] = useState<Valor[]>([]);
   const [cargando, setCargando] = useState<boolean>(false);
@@ -105,7 +105,7 @@ const Cartilla: React.FC = () => {
   return (
     <Row>
       <Col span={12}>
-        <Title level={2}>Cartilla de Valores</Title>
+        <Title level={2}>Reportes</Title>
         <Divider />
         <Form form={form} layout="vertical" onFinish={solicitarCartilla}>
           <Item
@@ -138,4 +138,4 @@ const Cartilla: React.FC = () => {
   );
 };
 
-export default Cartilla;
+export default Reporte;

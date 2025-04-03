@@ -8,7 +8,7 @@ import {
   MenuNavegacion,
   RutaPrivada,
 } from "./componentes";
-import { ABM, Cartilla, PaginaPrincipal, RT, Usuarios } from "./paginas";
+import { ABM, Reporte, PaginaPrincipal, RT, Usuarios } from "./paginas";
 import { api } from "./servicios";
 
 const { Header, Content } = Layout;
@@ -74,7 +74,7 @@ const App: React.FC = () => {
           </div>
           {usuario && (
             <>
-              <MenuNavegacion />
+              <MenuNavegacion esStaff={usuario.is_staff} />
               <Text
                 style={{
                   color: "white",
@@ -121,7 +121,7 @@ const App: React.FC = () => {
                 path="/usuarios"
                 element={<Usuarios usuario={usuario} />}
               />
-              <Route path="/grafico" element={<Cartilla />} />
+              <Route path="/grafico" element={<Reporte />} />
               <Route path="/rt" element={<RT />} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
