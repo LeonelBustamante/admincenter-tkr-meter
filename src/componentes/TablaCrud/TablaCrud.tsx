@@ -5,7 +5,7 @@ import { api } from "../../servicios";
 
 interface TablaCrudProps {
     endpoint: string;
-    isStaff: boolean;
+    permisoCrud: string;
 }
 
 interface Elemento {
@@ -13,7 +13,7 @@ interface Elemento {
     [key: string]: any;
 }
 
-const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, isStaff }) => {
+const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
     const [datos, setDatos] = useState<Elemento[]>([]);
     const [cargando, setCargando] = useState<boolean>(false);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -123,41 +123,48 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, isStaff }) => {
         }));
 
     // Agregamos columna de acciones
-    columnas.push({
-        title: "Acciones",
-        key: "acciones",
-        render: (_: any, registro: Elemento) => (
-            <Space>
-                <Button type="link" onClick={() => handleEditar(registro)}>
-                    Editar
-                </Button>
-                <Button
-                    type="link"
-                    danger
-                    onClick={() => handleEliminar(registro.id)}
-                >
-                    Eliminar
-                </Button>
-                {endpoint.includes("ubicaciones") && (
-                    <Button
-                        type="link"
-                        onClick={() =>
-                            window.open(
-                                `https://www.google.com/maps/search/?api=1&query=${registro.latitud},${registro.longitud}`
-                            )
-                        }
-                    >
-                        Ver en mapa
-                    </Button>
-                )}
-            </Space>
-        ),
-    });
+
+    {
+        permisoCrud === "SI" &&
+            columnas.push({
+                title: "Acciones",
+                key: "acciones",
+                render: (_: any, registro: Elemento) => (
+                    <Space>
+                        <Button
+                            type="link"
+                            onClick={() => handleEditar(registro)}
+                        >
+                            Editar
+                        </Button>
+                        <Button
+                            type="link"
+                            danger
+                            onClick={() => handleEliminar(registro.id)}
+                        >
+                            Eliminar
+                        </Button>
+                        {endpoint.includes("ubicaciones") && (
+                            <Button
+                                type="link"
+                                onClick={() =>
+                                    window.open(
+                                        `https://www.google.com/maps/search/?api=1&query=${registro.latitud},${registro.longitud}`
+                                    )
+                                }
+                            >
+                                Ver en mapa
+                            </Button>
+                        )}
+                    </Space>
+                ),
+            });
+    }
 
     return (
         <>
             {contextHolder}
-            {isStaff && (
+            {permisoCrud === "SI" && (
                 <Button
                     type="primary"
                     onClick={handleCrear}
@@ -168,7 +175,52 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, isStaff }) => {
             )}
             <Table
                 dataSource={datos}
-                columns={columnas}
+                columns={columnas.map((col) => {
+                    // Si es la columna de acciones, ajustamos según los permisos
+                    if (col.key === "acciones") {
+                        return {
+                            ...col,
+                            render: (_: any, registro: Elemento) => (
+                                <Space>
+                                    {permisoCrud === "SI" && (
+                                        <>
+                                            <Button
+                                                type="link"
+                                                onClick={() =>
+                                                    handleEditar(registro)
+                                                }
+                                            >
+                                                Editar
+                                            </Button>
+                                            <Button
+                                                type="link"
+                                                danger
+                                                onClick={() =>
+                                                    handleEliminar(registro.id)
+                                                }
+                                            >
+                                                Eliminar
+                                            </Button>
+                                        </>
+                                    )}
+                                    {endpoint.includes("ubicaciones") && (
+                                        <Button
+                                            type="link"
+                                            onClick={() =>
+                                                window.open(
+                                                    `https://www.google.com/maps/search/?api=1&query=${registro.latitud},${registro.longitud}`
+                                                )
+                                            }
+                                        >
+                                            Ver en mapa
+                                        </Button>
+                                    )}
+                                </Space>
+                            ),
+                        };
+                    }
+                    return col;
+                })}
                 rowKey="id"
                 loading={cargando}
             />
@@ -194,7 +246,7 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, isStaff }) => {
                                     name={key}
                                     label={formatearHeaderTable(key)}
                                 >
-                                    <Input />
+                                    <Input disabled={permisoCrud !== "SI"} />
                                 </Form.Item>
                             ))
                     }

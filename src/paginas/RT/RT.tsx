@@ -6,8 +6,11 @@ import { DashboardRT } from "../../componentes";
 import { IEquipo, IPlcs } from "../../types";
 
 const { Title } = Typography;
+interface IRT {
+    tipoPermiso?: "VER" | "SI";
+}
 
-const RT: React.FC = () => {
+const RT: React.FC<IRT> = ({ tipoPermiso }) => {
     const [equipos, setEquipo] = useState<IEquipo[]>([]);
     const [equipoSeleccionado, setEquipoSeleccionado] = useState<string>();
     const [cargando, setCargando] = useState<boolean>(false);
@@ -40,7 +43,6 @@ const RT: React.FC = () => {
                 message.error("No se encontraron PLCs para este equipo");
                 return;
             }
-            console.log("PLC cargado:", plcResponse.data[0]);
             setPlc(plcResponse.data[0]);
             setError(false);
         } catch (error) {
@@ -77,7 +79,11 @@ const RT: React.FC = () => {
             )}
             {!cargando && !error && (
                 <>
-                    <Title level={2}>Telemetria</Title>
+                    <Title level={2}>
+                        {tipoPermiso === "SI"
+                            ? "Telemetría"
+                            : "Visualización (Solo lectura)"}
+                    </Title>
                     <Select
                         size="large"
                         placeholder="Seleccionar PLC"
@@ -98,6 +104,7 @@ const RT: React.FC = () => {
                             id_plc={plc?.id}
                             ip_plc={plc?.ip}
                             port_plc={plc?.port}
+                            soloLectura={tipoPermiso === "VER"}
                         />
                     )}
                 </>

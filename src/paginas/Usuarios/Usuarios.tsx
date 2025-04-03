@@ -17,17 +17,10 @@ const { Title } = Typography;
 
 interface UsuariosProps {
     usuario: IUsuario | null;
+    permiteGestion: boolean;
 }
 
-interface UsuarioData {
-    id: number;
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-}
-
-const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
+const Usuarios: React.FC<UsuariosProps> = ({ usuario, permiteGestion }) => {
     // Si no hay usuario, mostramos un spinner o redirigimos
     if (!usuario) {
         return <Navigate to="/login" />;
@@ -62,7 +55,7 @@ const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
         setModalVisible(true);
     };
 
-    const handleEditar = (registro: UsuarioData) => {
+    const handleEditar = (registro: IUsuario) => {
         setModalTipo("editar");
         setUsuarioSeleccionado(registro);
         form.setFieldsValue(registro);
@@ -112,16 +105,20 @@ const Usuarios: React.FC<UsuariosProps> = ({ usuario }) => {
         { title: "Email", dataIndex: "email", key: "email" },
         { title: "Nombre", dataIndex: "first_name", key: "first_name" },
         { title: "Apellido", dataIndex: "last_name", key: "last_name" },
-        { title: "Empresa", dataIndex: "cliente_nombre", key: "cliente_nombre" },
+        {
+            title: "Empresa",
+            dataIndex: "cliente_nombre",
+            key: "cliente_nombre",
+        },
         {
             title: "Acciones",
             key: "acciones",
-            render: (_: any, registro: UsuarioData) => (
+            render: (_: any, registro: IUsuario) => (
                 <Space>
                     <Button type="link" onClick={() => handleEditar(registro)}>
                         Editar
                     </Button>
-                    {usuario.is_staff && (
+                    {permiteGestion && (
                         <Button
                             type="link"
                             danger
