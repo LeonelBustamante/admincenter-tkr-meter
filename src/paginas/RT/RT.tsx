@@ -3,7 +3,7 @@ import { message, Result, Select, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { api } from "../../servicios";
 import { DashboardRT } from "../../componentes";
-import { IEquipo, IPlcs } from "../../types";
+import { IEquipo, IPlc } from "../../types";
 
 const { Title } = Typography;
 interface IRT {
@@ -15,7 +15,7 @@ const RT: React.FC<IRT> = ({ tipoPermiso }) => {
     const [equipoSeleccionado, setEquipoSeleccionado] = useState<string>();
     const [cargando, setCargando] = useState<boolean>(false);
     const [error, setError] = useState<boolean>(false);
-    const [plc, setPlc] = useState<IPlcs>();
+    const [plc, setPlc] = useState<IPlc>();
 
     const cargarCanales = () => {
         setCargando(true);

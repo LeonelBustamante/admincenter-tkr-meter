@@ -2,12 +2,7 @@ import { Image, Layout, Result, Typography } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import {
-    BotonCerrarSesion,
-    FormularioLogin,
-    MenuNavegacion,
-    RutaPrivada,
-} from "./componentes";
+import { BotonCerrarSesion, FormularioLogin, MenuNavegacion, RutaPrivada } from "./componentes";
 import { ABM, Reporte, PaginaPrincipal, RT, Usuarios } from "./paginas";
 import { api } from "./servicios";
 import { IUsuario } from "./types";
@@ -49,10 +44,7 @@ const App: React.FC = () => {
                     gestion_usuarios: "NO",
                     generar_reportes: "NO",
                 };
-                console.log(
-                    "Permisos inicializados con valores por defecto:",
-                    nuevoUsuario
-                );
+                console.log("Permisos inicializados con valores por defecto:", nuevoUsuario);
             }
             setUsuario(nuevoUsuario);
         } else {
@@ -88,11 +80,7 @@ const App: React.FC = () => {
                     }}
                 >
                     <div style={{ flex: 1 }}>
-                        <Image
-                            src="/logo.svg"
-                            preview={false}
-                            style={{ width: 150, marginRight: "20px" }}
-                        />
+                        <Image src="/logo.svg" preview={false} style={{ width: 150, marginRight: "20px" }} />
                     </div>
                     {usuario && usuario.permisos && (
                         <>
@@ -109,9 +97,7 @@ const App: React.FC = () => {
                                     ? `Bienvenido, ${usuario.first_name} ${usuario.last_name}`
                                     : `Bienvenido, ${usuario.username}`}
                             </Text>
-                            <BotonCerrarSesion
-                                onCerrarSesion={() => setUsuario(null)}
-                            />
+                            <BotonCerrarSesion onCerrarSesion={() => setUsuario(null)} />
                         </>
                     )}
                 </Header>
@@ -119,35 +105,18 @@ const App: React.FC = () => {
                     <Routes>
                         <Route
                             path="/login"
-                            element={
-                                usuario ? (
-                                    <Navigate to="/" />
-                                ) : (
-                                    <FormularioLogin onLogin={handleLogin} />
-                                )
-                            }
+                            element={usuario ? <Navigate to="/" /> : <FormularioLogin onLogin={handleLogin} />}
                         />
-                        <Route
-                            element={<RutaPrivada isAutenticado={!!usuario} />}
-                        >
+                        <Route element={<RutaPrivada isAutenticado={!!usuario} />}>
                             <Route
                                 path="/"
-                                element={
-                                    <PaginaPrincipal
-                                        usuario={usuario!}
-                                        onCerrarSesion={() => setUsuario(null)}
-                                    />
-                                }
+                                element={<PaginaPrincipal usuario={usuario!} onCerrarSesion={() => setUsuario(null)} />}
                             />
                             <Route
                                 path="/abm"
                                 element={
-                                    usuario &&
-                                    usuario.permisos &&
-                                    usuario.permisos.crud !== "NO" ? (
-                                        <ABM
-                                            tipoPermiso={usuario.permisos.crud}
-                                        />
+                                    usuario && usuario.permisos && usuario.permisos.crud !== "NO" ? (
+                                        <ABM tipoPermiso={usuario.permisos.crud} />
                                     ) : (
                                         <Navigate to="/" />
                                     )
@@ -159,10 +128,7 @@ const App: React.FC = () => {
                                     usuario && usuario.permisos ? (
                                         <Usuarios
                                             usuario={usuario}
-                                            permiteGestion={
-                                                usuario.permisos
-                                                    .gestion_usuarios === "SI"
-                                            }
+                                            permiteGestion={usuario.permisos.gestion_usuarios === "SI"}
                                         />
                                     ) : (
                                         <Navigate to="/" />
@@ -172,11 +138,8 @@ const App: React.FC = () => {
                             <Route
                                 path="/grafico"
                                 element={
-                                    usuario &&
-                                    usuario.permisos &&
-                                    usuario.permisos.generar_reportes ===
-                                        "SI" ? (
-                                        <Reporte />
+                                    usuario && usuario.permisos && usuario.permisos.generar_reportes === "SI" ? (
+                                        <Reporte user={usuario} />
                                     ) : (
                                         <Navigate to="/" />
                                     )
@@ -185,14 +148,8 @@ const App: React.FC = () => {
                             <Route
                                 path="/rt"
                                 element={
-                                    usuario &&
-                                    usuario.permisos &&
-                                    usuario.permisos.real_time !== "NO" ? (
-                                        <RT
-                                            tipoPermiso={
-                                                usuario.permisos.real_time
-                                            }
-                                        />
+                                    usuario && usuario.permisos && usuario.permisos.real_time !== "NO" ? (
+                                        <RT tipoPermiso={usuario.permisos.real_time} />
                                     ) : (
                                         <Navigate to="/" />
                                     )

@@ -1,4 +1,4 @@
-export interface IPlcs {
+export interface IPlc {
     id: number;
     ip: string;
     port: number;
