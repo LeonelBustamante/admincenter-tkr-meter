@@ -1,4 +1,4 @@
-import { Button, Form, Input, Modal, Space, Table, message } from "antd";
+import { Button, Space, Table, message } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { api } from "../../servicios";
@@ -14,20 +14,12 @@ interface Elemento {
 }
 
 const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
-    const [datos, setDatos] = useState<Elemento[]>([]);
     const [cargando, setCargando] = useState<boolean>(false);
-    const [modalVisible, setModalVisible] = useState<boolean>(false);
-    const [modalTipo, setModalTipo] = useState<"crear" | "editar">("crear");
-    const [elementoSeleccionado, setElementoSeleccionado] =
-        useState<Elemento | null>(null);
-    const [form] = Form.useForm();
+    const [datos, setDatos] = useState<Elemento[]>([]);
     const [messageAPI, contextHolder] = message.useMessage();
 
-    // Función para formatear el título de la columna
     const formatearHeaderTable = (key: string) => {
         let respuesta = key.charAt(0).toUpperCase() + key.slice(1);
-        // Reemplaza el primer "_" por un espacio.
-        // Si deseas reemplazar todos, usa: respuesta = respuesta.replace(/_/g, ' ');
         respuesta = respuesta.replace("_", " ");
         return respuesta;
     };
@@ -50,62 +42,6 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
         cargarDatos();
     }, [endpoint]);
 
-    const handleCrear = () => {
-        setModalTipo("crear");
-        setElementoSeleccionado(null);
-        form.resetFields();
-        setModalVisible(true);
-    };
-
-    const handleEditar = (registro: Elemento) => {
-        setModalTipo("editar");
-        setElementoSeleccionado(registro);
-        form.setFieldsValue(registro);
-        setModalVisible(true);
-    };
-
-    const handleEliminar = (id: number) => {
-        Modal.confirm({
-            title: "¿Está seguro de eliminar este registro?",
-            onOk: () => {
-                api.delete(`${endpoint}${id}/`)
-                    .then(() => {
-                        messageAPI.success("Registro eliminado");
-                        cargarDatos();
-                    })
-                    .catch(() => {
-                        messageAPI.error("Error al eliminar");
-                    });
-            },
-        });
-    };
-
-    const handleOk = () => {
-        form.validateFields().then((values) => {
-            if (modalTipo === "crear") {
-                api.post(endpoint, values)
-                    .then(() => {
-                        messageAPI.success("Registro creado");
-                        cargarDatos();
-                        setModalVisible(false);
-                    })
-                    .catch(() => {
-                        messageAPI.error("Error al crear");
-                    });
-            } else if (modalTipo === "editar" && elementoSeleccionado) {
-                api.put(`${endpoint}${elementoSeleccionado.id}/`, values)
-                    .then(() => {
-                        messageAPI.success("Registro actualizado");
-                        cargarDatos();
-                        setModalVisible(false);
-                    })
-                    .catch(() => {
-                        messageAPI.error("Error al actualizar");
-                    });
-            }
-        });
-    };
-
     // Generamos las columnas de forma dinámica basadas en la primera fila de datos
     const columnas = Object.keys(datos[0] || {})
         .filter((key) => key !== "id")
@@ -125,25 +61,12 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
     // Agregamos columna de acciones
 
     {
-        permisoCrud === "SI" &&
+        endpoint.includes("ubicaciones") &&
             columnas.push({
                 title: "Acciones",
                 key: "acciones",
                 render: (_: any, registro: Elemento) => (
                     <Space>
-                        <Button
-                            type="link"
-                            onClick={() => handleEditar(registro)}
-                        >
-                            Editar
-                        </Button>
-                        <Button
-                            type="link"
-                            danger
-                            onClick={() => handleEliminar(registro.id)}
-                        >
-                            Eliminar
-                        </Button>
                         {endpoint.includes("ubicaciones") && (
                             <Button
                                 type="link"
@@ -165,11 +88,7 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
         <>
             {contextHolder}
             {permisoCrud === "SI" && (
-                <Button
-                    type="primary"
-                    onClick={handleCrear}
-                    style={{ marginBottom: "16px" }}
-                >
+                <Button onClick={() => window.open(`http://localhost:8000/admin/${endpoint.split("/")[2]}`, "_blank")}>
                     Crear nuevo registro
                 </Button>
             )}
@@ -182,27 +101,6 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
                             ...col,
                             render: (_: any, registro: Elemento) => (
                                 <Space>
-                                    {permisoCrud === "SI" && (
-                                        <>
-                                            <Button
-                                                type="link"
-                                                onClick={() =>
-                                                    handleEditar(registro)
-                                                }
-                                            >
-                                                Editar
-                                            </Button>
-                                            <Button
-                                                type="link"
-                                                danger
-                                                onClick={() =>
-                                                    handleEliminar(registro.id)
-                                                }
-                                            >
-                                                Eliminar
-                                            </Button>
-                                        </>
-                                    )}
                                     {endpoint.includes("ubicaciones") && (
                                         <Button
                                             type="link"
@@ -224,34 +122,6 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
                 rowKey="id"
                 loading={cargando}
             />
-            <Modal
-                title={
-                    modalTipo === "crear" ? "Crear Registro" : "Editar Registro"
-                }
-                open={modalVisible}
-                onOk={handleOk}
-                onCancel={() => setModalVisible(false)}
-            >
-                <Form form={form} layout="vertical">
-                    {
-                        // Para simplificar, se asume que todos los campos (excepto 'id') se renderizan como Input.
-                        Object.keys(datos[0] || {})
-                            .filter(
-                                (key) =>
-                                    key !== "id" && key !== "fecha_creacion"
-                            )
-                            .map((key) => (
-                                <Form.Item
-                                    key={key}
-                                    name={key}
-                                    label={formatearHeaderTable(key)}
-                                >
-                                    <Input disabled={permisoCrud !== "SI"} />
-                                </Form.Item>
-                            ))
-                    }
-                </Form>
-            </Modal>
         </>
     );
 };

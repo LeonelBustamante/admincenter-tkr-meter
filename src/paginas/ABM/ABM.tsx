@@ -14,7 +14,7 @@ const ABM: React.FC<IABM> = ({ tipoPermiso }) => {
             ? [{ label: "Canales", value: "/api/canales/" }]
             : [
                   { label: "Canales", value: "/api/canales/" },
-                  { label: "Empresas", value: "/api/clientes/" },
+                  { label: "Clientes", value: "/api/clientes/" },
                   { label: "Equipos", value: "/api/equipos/" },
                   { label: "Notas", value: "/api/notas/" },
                   { label: "PLC", value: "/api/plcs/" },
