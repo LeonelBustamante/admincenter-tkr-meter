@@ -27,6 +27,7 @@ const MyDocument: React.FC<MyDocumentProps> = ({ datos, usuario }) => {
         <Document>
             <Page
                 size="A4"
+                bookmark={{ title: "Informe de PH" }}
                 orientation="landscape"
                 style={{
                     padding: "1.5cm 1.32cm 1.5cm 2.3cm",
@@ -53,7 +54,7 @@ const MyDocument: React.FC<MyDocumentProps> = ({ datos, usuario }) => {
                             borderRight: "1px solid #ff0000",
                         }}
                     >
-                        <Image src="/logo.png" style={{ width: "2.26cm" }} />
+                        <Image src="/logo.png" style={{ height: "70%" }} />
                     </View>
                     <View
                         style={{
@@ -65,15 +66,7 @@ const MyDocument: React.FC<MyDocumentProps> = ({ datos, usuario }) => {
                             borderRight: "1px solid #ff0000",
                         }}
                     >
-                        <Text
-                            style={{
-                                textAlign: "center",
-
-                                fontSize: 12,
-                            }}
-                        >
-                            INFORME DE PH
-                        </Text>
+                        <Text style={{ textAlign: "center", fontSize: 12 }}> INFORME DE PH </Text>
                     </View>
                     <View
                         style={{
@@ -101,7 +94,7 @@ const MyDocument: React.FC<MyDocumentProps> = ({ datos, usuario }) => {
                                     paddingLeft: 5,
                                 }}
                             >
-                                Sensor: {nombreSensor}
+                                Equipo: {nombreEquipo}
                             </Text>
                         </View>
                         <View
@@ -120,8 +113,7 @@ const MyDocument: React.FC<MyDocumentProps> = ({ datos, usuario }) => {
                                     paddingLeft: 5,
                                 }}
                             >
-                                Operador:{" "}
-                                {usuario != null ? `${usuario?.username}` : "Sin nombre"}
+                                Operador: {usuario != null ? `${usuario?.username}` : "Sin nombre"}
                             </Text>
                         </View>
                     </View>
@@ -156,7 +148,7 @@ const MyDocument: React.FC<MyDocumentProps> = ({ datos, usuario }) => {
                                 fontSize: 10,
                             }}
                         >
-                            Equipo: {nombreEquipo}
+                            Sensor: {nombreSensor}
                         </Text>
                     </View>
 
@@ -172,7 +164,6 @@ const MyDocument: React.FC<MyDocumentProps> = ({ datos, usuario }) => {
                         <Text
                             style={{
                                 textAlign: "left",
-
                                 paddingLeft: 5,
                                 fontSize: 10,
                             }}
@@ -199,9 +190,6 @@ const MyDocument: React.FC<MyDocumentProps> = ({ datos, usuario }) => {
                         flex: 1,
                         height: "auto",
                         width: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
                     }}
                 >
                     {datos?.chartUrl && <Image style={{ width: "100%" }} src={datos.chartUrl} />}

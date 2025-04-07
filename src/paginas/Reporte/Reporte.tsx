@@ -1,6 +1,6 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { PDFViewer } from "@react-pdf/renderer";
-import { Button, Col, ConfigProvider, Form, message, Result, Row } from "antd";
+import { Button, Col, ConfigProvider, Form, message, Result, Row, Typography } from "antd";
 import esES from "antd/es/locale/es_ES";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/es";
@@ -13,35 +13,56 @@ import { api } from "../../servicios";
 import { ICanal, IEquipo, IUsuario } from "../../types";
 import ReporteForm from "./components/ReporteForm";
 import useNotas from "../../hooks/useNotas";
-import {
-    Brush,
-    CartesianGrid,
-    Line,
-    LineChart,
-    ReferenceLine,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from "recharts";
+import ReporteChart from "./components/ReporteChart";
+import ReporteCombinedChart from "./components/ReporteCombinedChart";
+
+const { Title } = Typography;
+
+// Colores predefinidos para las líneas de los diferentes canales
+const CHART_COLORS = [
+    "#8884d8", // Violeta
+    "#82ca9d", // Verde
+    "#ff7300", // Naranja
+    "#0088FE", // Azul
+    "#FF8042", // Naranja-rojo
+    "#00C49F", // Verde-azulado
+];
 
 export interface IPuntosDelGrafico {
     time: string;
     value: number;
 }
+
 interface ValoresFormulario {
     fecha: [Dayjs, Dayjs];
-    canal: ICanal;
+    canal: number[];
     nombre_equipo: string;
 }
+
+interface ChartDataState {
+    [canalId: number]: {
+        data: IPuntosDelGrafico[];
+        canal: ICanal;
+        color: string;
+    };
+}
+
+// Tipo de visualización del gráfico
+type ChartViewMode = "separate" | "combined";
 
 const Reporte = ({ user }: { user: IUsuario }) => {
     const [form] = Form.useForm<any>();
     const [pdfData, setPdfData] = useState<IValoresParaPDF | null>(null);
-    const [canalSeleccionado, setCanalSeleccionado] = useState<ICanal>();
+    const [canalesSeleccionados, setCanalesSeleccionados] = useState<ICanal[]>([]);
     const [equipoSeleccionado, setEquipoSeleccionado] = useState<IEquipo>();
 
-    const [chartData, setChartData] = useState<IPuntosDelGrafico[]>([]);
+    // Estado para almacenar los datos de todos los gráficos
+    const [chartsData, setChartsData] = useState<ChartDataState>({});
+    const [cargandoDatos, setCargandoDatos] = useState<boolean>(false);
+
+    // Estado para controlar el modo de visualización del gráfico
+    const [viewMode, setViewMode] = useState<ChartViewMode>("combined");
+
     const [messageApi, contextHolder] = message.useMessage();
     const [fecha, setTimeNota] = useState<any>();
     const [modalNotaAbierto, setModalNotaAbierto] = useState(false);
@@ -51,8 +72,9 @@ const Reporte = ({ user }: { user: IUsuario }) => {
     /** Cierra el modal */
     const cerrarModalNota = () => setModalNotaAbierto(false);
 
-    // Ref para el contenedor del chart (lo que queremos capturar)
-    const chartRef = useRef<HTMLDivElement>(null);
+    // Refs para los contenedores de los charts (lo que queremos capturar)
+    const chartRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+    const combinedChartRef = useRef<HTMLDivElement>(null);
 
     const agregarNota = async (valores: { fecha: string; texto: string }) => {
         api.post("/api/notas/", {
@@ -70,35 +92,60 @@ const Reporte = ({ user }: { user: IUsuario }) => {
     };
 
     const obtenerGrafico = async (fechas: [Dayjs, Dayjs]) => {
-        api.get(
-            `/api/valores/valores-por-fecha/?idcanal=${canalSeleccionado?.id}&fecha_inicio=${fechas[0].format(
-                "YYYY-MM-DD HH:mm:ss"
-            )}&fecha_fin=${fechas[1].format("YYYY-MM-DD HH:mm:ss")}`
-        )
-            .then((response) => {
-                const datosGrafico: IPuntosDelGrafico[] = response.data.map(
-                    (dato: { time: string; value: number }) => ({
-                        time: dayjs(dato.time, "DD/MM/YYYY HH:mm:ss").format("DD/MM/YYYY HH:mm"),
-                        value: dato.value,
-                    })
-                );
-                setChartData(datosGrafico);
-            })
-            .catch((error) => {
-                messageApi.error("Error al cargar datos del gráfico:", error);
+        // Limpiar datos de gráficos anteriores
+        setChartsData({});
+        setCargandoDatos(true);
+
+        try {
+            // Obtener los IDs de los canales seleccionados
+            const canalIds = canalesSeleccionados.map((canal) => canal.id);
+
+            // Llamar al nuevo endpoint que maneja múltiples canales
+            const response = await api.get(
+                `/api/valores/valores-por-fecha-multiple/?canales=${JSON.stringify(
+                    canalIds
+                )}&fecha_inicio=${fechas[0].format("YYYY-MM-DD HH:mm:ss")}&fecha_fin=${fechas[1].format(
+                    "YYYY-MM-DD HH:mm:ss"
+                )}`
+            );
+
+            // Procesar los datos recibidos
+            const nuevosDatos: ChartDataState = {};
+
+            Object.entries(response.data).forEach(([canalId, datos]: [string, any], index) => {
+                const canal = canalesSeleccionados.find((c) => c.id === parseInt(canalId));
+
+                if (canal) {
+                    nuevosDatos[parseInt(canalId)] = {
+                        data: datos.datos.map((punto: any) => ({
+                            time: dayjs(punto.time, "DD/MM/YYYY HH:mm:ss").format("DD/MM/YYYY HH:mm"),
+                            value: punto.value,
+                        })),
+                        canal: canal,
+                        color: CHART_COLORS[index % CHART_COLORS.length], // Asignar un color a cada canal
+                    };
+                }
             });
+
+            setChartsData(nuevosDatos);
+        } catch (error: any) {
+            console.error("Error al obtener datos:", error);
+            messageApi.error(`Error al cargar datos de los gráficos: ${error.message || error}`);
+        } finally {
+            setCargandoDatos(false);
+        }
     };
 
     const handleFinish = (valores: ValoresFormulario) => {
-        if (!equipoSeleccionado || !canalSeleccionado) {
-            messageApi.error("Por favor, selecciona un equipo y un canal.");
+        if (!equipoSeleccionado || canalesSeleccionados.length === 0) {
+            messageApi.error("Por favor, selecciona un equipo y al menos un canal.");
             return;
         }
 
         setPdfData({
             ...valores,
             fecha: [valores.fecha[0], valores.fecha[1]],
-            nombre_canal: canalSeleccionado?.nombre || "",
+            nombre_canal: canalesSeleccionados.map((c) => c.nombre).join(", "),
             nombre_equipo: equipoSeleccionado?.nombre || "",
             chartUrl: "",
         });
@@ -106,18 +153,69 @@ const Reporte = ({ user }: { user: IUsuario }) => {
         obtenerGrafico(valores.fecha);
     };
 
+    // Capturar el gráfico y agregarlo al PDF
     const insertarGraficoEnPDF = async () => {
-        if (!chartRef.current) {
-            console.error("No se encontró el chartRef");
-
-            return;
-        }
         try {
-            const canvas = await html2canvas(chartRef.current);
-            const imgData = canvas.toDataURL("image/png");
-            setPdfData((prevData) => (prevData ? { ...prevData, chartUrl: imgData } : null));
+            let canvas: HTMLCanvasElement | null = null;
+
+            if (viewMode === "combined") {
+                // Capturar el gráfico combinado
+                if (!combinedChartRef.current) {
+                    messageApi.error("No se encontró el gráfico combinado");
+                    return;
+                }
+                canvas = await html2canvas(combinedChartRef.current);
+            } else {
+                // Capturar múltiples gráficos y combinarlos
+                if (Object.keys(chartRefs.current).length === 0) {
+                    messageApi.error("No se encontraron referencias a los gráficos");
+                    return;
+                }
+
+                const canvasPromises = Object.entries(chartRefs.current).map(async ([canalId, ref]) => {
+                    if (!ref) return null;
+                    const canvas = await html2canvas(ref);
+                    return { id: canalId, canvas };
+                });
+
+                const canvases = await Promise.all(canvasPromises);
+                const validCanvases = canvases.filter((c) => c !== null) as { id: string; canvas: HTMLCanvasElement }[];
+
+                if (validCanvases.length === 0) {
+                    messageApi.error("No se pudieron capturar los gráficos");
+                    return;
+                }
+
+                // Crear un canvas combinado con todos los gráficos
+                const combinedCanvas = document.createElement("canvas");
+                const ctx = combinedCanvas.getContext("2d");
+
+                if (!ctx) {
+                    messageApi.error("No se pudo crear el canvas combinado");
+                    return;
+                }
+
+                // Definir el tamaño del canvas combinado
+                const singleHeight = validCanvases[0].canvas.height;
+                const singleWidth = validCanvases[0].canvas.width;
+
+                combinedCanvas.width = singleWidth;
+                combinedCanvas.height = singleHeight * validCanvases.length;
+
+                // Dibujar cada canvas en el canvas combinado
+                validCanvases.forEach((item, index) => {
+                    ctx.drawImage(item.canvas, 0, index * singleHeight);
+                });
+
+                canvas = combinedCanvas;
+            }
+
+            if (canvas) {
+                const imgData = canvas.toDataURL("image/png");
+                setPdfData((prevData) => (prevData ? { ...prevData, chartUrl: imgData } : null));
+            }
         } catch (error: any) {
-            messageApi.error("Error al capturar el chart:", error.message);
+            messageApi.error("Error al capturar los gráficos: " + error.message);
         }
     };
 
@@ -135,7 +233,16 @@ const Reporte = ({ user }: { user: IUsuario }) => {
         await agregarNota({ fecha: valores.fecha, texto: valores.texto });
     };
 
-    console.log(user);
+    // Preparar datos para el gráfico combinado
+    const getCanalesDataForCombinedChart = () => {
+        return Object.entries(chartsData).map(([canalId, data]) => ({
+            id: parseInt(canalId),
+            nombre: data.canal.nombre,
+            unidad: data.canal.unidad || "",
+            data: data.data,
+            color: data.color,
+        }));
+    };
 
     return (
         <>
@@ -150,88 +257,65 @@ const Reporte = ({ user }: { user: IUsuario }) => {
                                 <Col span={24}>
                                     <ReporteForm
                                         setEquipoSeleccionado={setEquipoSeleccionado}
-                                        setCanalSeleccionado={setCanalSeleccionado}
+                                        setCanalSeleccionado={(canales) => setCanalesSeleccionados(canales)}
                                         equipos={equipos}
                                         onFinish={handleFinish}
                                         form={form}
                                     />
-                                    {canalSeleccionado && chartData.length > 0 && (
-                                        <Row>
-                                            <Col span={24}>
-                                                <div ref={chartRef}>
-                                                    <ResponsiveContainer width="100%" height={400}>
-                                                        <LineChart
-                                                            data={
-                                                                chartData.length > 0
-                                                                    ? chartData
-                                                                    : [{ time: "00:00", value: 0 }]
-                                                            }
-                                                            margin={{ top: 5, right: 10, left: 10, bottom: 40 }}
-                                                            onDoubleClick={handleDobleClickGrafico}
+
+                                    {/* Mostrar spinner durante la carga de datos */}
+                                    {cargandoDatos && (
+                                        <div style={{ textAlign: "center", padding: "20px" }}>
+                                            <LoadingOutlined style={{ fontSize: 24 }} />
+                                            <p>Cargando datos...</p>
+                                        </div>
+                                    )}
+
+                                    {/* Gráfico combinado (si está seleccionado) */}
+                                    {!cargandoDatos &&
+                                        viewMode === "combined" &&
+                                        Object.entries(chartsData).length > 0 && (
+                                            <Row>
+                                                <Col span={24}>
+                                                    <ReporteCombinedChart
+                                                        ref={combinedChartRef}
+                                                        canalesData={getCanalesDataForCombinedChart()}
+                                                        notas={notas}
+                                                        onDoubleClick={handleDobleClickGrafico}
+                                                    />
+                                                </Col>
+                                            </Row>
+                                        )}
+
+                                    {/* Gráficos separados (si está seleccionado) */}
+                                    {!cargandoDatos &&
+                                        viewMode === "separate" &&
+                                        Object.entries(chartsData).length > 0 && (
+                                            <Row gutter={[0, 16]}>
+                                                {Object.entries(chartsData).map(([canalId, chartData]) => (
+                                                    <Col span={24} key={canalId}>
+                                                        <Title level={4}>{chartData.canal.nombre}</Title>
+                                                        <div
+                                                            ref={(ref) => {
+                                                                chartRefs.current[Number(canalId)] = ref;
+                                                            }}
                                                         >
-                                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                                            <XAxis
-                                                                dataKey="time"
-                                                                angle={90}
-                                                                textAnchor="start"
-                                                                height={60}
-                                                                tickFormatter={(value) =>
-                                                                    dayjs(value, "DD/MM/YYYY HH:mm").format(
-                                                                        "DD/MM HH:mm"
-                                                                    )
-                                                                }
-                                                                tick={{ dy: 10 }}
+                                                            <ReporteChart
+                                                                chartData={chartData.data}
+                                                                notas={notas}
+                                                                uniMedida={chartData.canal.unidad || ""}
+                                                                onDoubleClick={handleDobleClickGrafico}
+                                                                onCaptureClick={() => {}}
                                                             />
-                                                            <YAxis
-                                                                label={{
-                                                                    value: canalSeleccionado.unidad,
-                                                                    style: { textAnchor: "middle" },
-                                                                    angle: -90,
-                                                                    position: "left",
-                                                                    offset: 0,
-                                                                }}
-                                                            />
-                                                            <Tooltip
-                                                                contentStyle={{
-                                                                    backgroundColor: "#333",
-                                                                    color: "#fff",
-                                                                }}
-                                                                itemStyle={{ color: "#fff" }}
-                                                            />
-                                                            <Line
-                                                                type="linear"
-                                                                dataKey="value"
-                                                                stroke="#8884d8"
-                                                                strokeWidth={2}
-                                                                dot={false}
-                                                                animationDuration={0}
-                                                            />
-                                                            <Brush
-                                                                dataKey="time"
-                                                                height={13}
-                                                                fill="transparent"
-                                                                tickFormatter={() => ""}
-                                                                y={290}
-                                                            />
-                                                            {notas.map((nota, index) => (
-                                                                <ReferenceLine
-                                                                    key={index}
-                                                                    x={nota.fecha}
-                                                                    stroke="red"
-                                                                    strokeDasharray="3 3"
-                                                                    label={{
-                                                                        value: nota.texto + " [" + nota.fecha + "]",
-                                                                        angle: -90,
-                                                                        dx: -10,
-                                                                        position: "center",
-                                                                        style: { fontWeight: "bold" },
-                                                                    }}
-                                                                />
-                                                            ))}
-                                                        </LineChart>
-                                                    </ResponsiveContainer>
-                                                </div>
-                                            </Col>
+                                                        </div>
+                                                    </Col>
+                                                ))}
+                                            </Row>
+                                        )}
+
+                                    {/* Botón para generar PDF */}
+                                    {!cargandoDatos && Object.keys(chartsData).length > 0 && (
+                                        <Row style={{ marginTop: 16 }}>
                                             <Col span={24}>
                                                 <Button
                                                     type="primary"
