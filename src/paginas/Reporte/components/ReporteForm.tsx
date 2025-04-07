@@ -1,11 +1,11 @@
-import { Button, DatePicker, Divider, Form, FormInstance, Row, Select, Typography, message } from "antd";
+import { Button, DatePicker, Divider, Flex, Form, FormInstance, Row, Select, Spin, Typography, message } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import { useState } from "react";
 import { api } from "../../../servicios";
 import { ICanal, IEquipo } from "../../../types";
 
 const { Item } = Form;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 interface ReporteFormProps {
@@ -105,7 +105,7 @@ const ReporteForm: React.FC<ReporteFormProps> = ({
                         />
                     </Item>
 
-                    {mostrarSeleccionarCanal && (
+                    {mostrarSeleccionarCanal ? (
                         <Item label="Canal" name="canal" required>
                             <Select
                                 size="large"
@@ -115,9 +115,16 @@ const ReporteForm: React.FC<ReporteFormProps> = ({
                                 loading={conultandoRangoFecha}
                             />
                         </Item>
+                    ) : (
+                        <Flex>
+                            <Spin spinning={conultandoCanalPorEquipo} />
+                            <Text style={{ marginLeft: 10 }} strong>
+                                Consultando canales...
+                            </Text>
+                        </Flex>
                     )}
 
-                    {mostrarSeleccionarFecha && (
+                    {mostrarSeleccionarFecha ? (
                         <>
                             <Item label="Fecha" name="fecha" required>
                                 <RangePicker
@@ -139,6 +146,13 @@ const ReporteForm: React.FC<ReporteFormProps> = ({
                                 </Button>
                             </Item>
                         </>
+                    ) : (
+                        <Flex>
+                            <Spin spinning={conultandoRangoFecha} />
+                            <Text style={{ marginLeft: 10 }} strong>
+                                Consultando rango de fechas disponible...
+                            </Text>
+                        </Flex>
                     )}
                 </Form>
             </Row>
