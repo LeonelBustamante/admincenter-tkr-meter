@@ -24,7 +24,7 @@ const ModalNota: React.FC<ModalNotaProps> = ({
     const manejarEnvio = () => {
         formulario.validateFields().then((valores) => {
             handleAgregar({
-                fecha: valores.fecha.format("DD-MM-YYYY HH:mm:ss"),
+                fecha: valores.fecha.format("YYYY-MM-DD HH:mm:ss"),
                 texto: valores.nota,
             });
             formulario.resetFields();

@@ -79,7 +79,7 @@ const Reporte = ({ user }: { user: IUsuario }) => {
     const agregarNota = async (valores: { fecha: string; texto: string }) => {
         api.post("/api/notas/", {
             fecha: valores.fecha,
-            nota: valores.texto,
+            texto: valores.texto,
         })
             .then(() => {
                 messageApi.success("Nota agregada correctamente");
@@ -222,7 +222,9 @@ const Reporte = ({ user }: { user: IUsuario }) => {
     // Función para manejar el doble click en el gráfico
     const handleDobleClickGrafico = (evento: any) => {
         if (evento && evento.activeLabel) {
-            const fechaFormateada = dayjs(evento.activeLabel, "DD/MM/YYYY HH:mm:ss");
+            console.log(evento);
+            
+            const fechaFormateada = dayjs(evento.activeLabel, "DD/MM/YYYY HH:mm");
             setTimeNota(fechaFormateada);
             setModalNotaAbierto(true);
         }

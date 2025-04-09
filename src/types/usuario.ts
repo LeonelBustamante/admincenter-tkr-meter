@@ -7,6 +7,8 @@ export interface IUsuario {
     is_superuser: boolean;
     tipo_usuario?: string;
     email?: string;
+    nombre?: string;
+    apellido?: string;
     permisos: {
         real_time: "NO" | "VER" | "SI";
         crud: "NO" | "VER" | "SI";

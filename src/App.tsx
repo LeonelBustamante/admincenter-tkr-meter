@@ -94,7 +94,7 @@ const App: React.FC = () => {
                                 }}
                             >
                                 {usuario.first_name && usuario.last_name
-                                    ? `Bienvenido, ${usuario.first_name} ${usuario.last_name}`
+                                    ? `Bienvenido, ${usuario.nombre} ${usuario.apellido}`
                                     : `Bienvenido, ${usuario.username}`}
                             </Text>
                             <BotonCerrarSesion onCerrarSesion={() => setUsuario(null)} />

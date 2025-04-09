@@ -35,9 +35,7 @@ const RT: React.FC<IRT> = ({ tipoPermiso }) => {
     const obtenerIp = async () => {
         setCargando(true);
         try {
-            const plcResponse = await api.get(
-                `/api/plcs/?equipo_nombre=${equipoSeleccionado}`
-            );
+            const plcResponse = await api.get(`/api/plcs/?equipo_nombre=${equipoSeleccionado}`);
             if (!plcResponse.data.length) {
                 setError(true);
                 message.error("No se encontraron PLCs para este equipo");
@@ -74,16 +72,10 @@ const RT: React.FC<IRT> = ({ tipoPermiso }) => {
     return (
         <>
             {error && <Result status="error" title="Error al cargar datos" />}
-            {cargando && (
-                <Result icon={<LoadingOutlined />} title="Cargando..." />
-            )}
+            {cargando && <Result icon={<LoadingOutlined />} title="Cargando..." />}
             {!cargando && !error && (
                 <>
-                    <Title level={2}>
-                        {tipoPermiso === "SI"
-                            ? "Telemetría"
-                            : "Visualización (Solo lectura)"}
-                    </Title>
+                    <Title level={2}>{tipoPermiso === "SI" ? "Telemetría" : "Visualización (Solo lectura)"}</Title>
                     <Select
                         size="large"
                         placeholder="Seleccionar PLC"
@@ -91,10 +83,7 @@ const RT: React.FC<IRT> = ({ tipoPermiso }) => {
                         style={{ width: "50%", marginBottom: 20 }}
                     >
                         {equipos.map((equipo) => (
-                            <Select.Option
-                                key={equipo.id}
-                                value={equipo.nombre}
-                            >
+                            <Select.Option key={equipo.id} value={equipo.nombre}>
                                 {equipo.nombre}
                             </Select.Option>
                         ))}
