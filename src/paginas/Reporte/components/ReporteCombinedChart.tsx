@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { IPuntosDelGrafico } from "../Reporte";
 import { Typography } from "antd";
+import dayjs from "dayjs";
 
 // Colores predefinidos para las líneas de los diferentes canales
 const CHART_COLORS = [
@@ -76,6 +77,10 @@ const ReporteCombinedChart = forwardRef(
         // Combinamos los datos de todos los canales
         const combinedData = combineChartData(canalesData);
 
+        console.log(notas);
+
+        console.log("combinedData", combinedData[0]);
+
         return (
             <div ref={ref}>
                 <ResponsiveContainer width="100%" height={500}>
@@ -133,11 +138,11 @@ const ReporteCombinedChart = forwardRef(
                         {notas.map((nota, index) => (
                             <ReferenceLine
                                 key={index}
-                                x={nota.fecha}
+                                x={dayjs(nota.fecha, "YYYY-MM-DDTHH:mm:ss").format("DD/MM/YYYY HH:mm").toString()}
                                 stroke="red"
                                 strokeDasharray="3 3"
                                 label={{
-                                    value: nota.texto + " [" + nota.fecha + "]",
+                                    value: nota.texto + " [" + dayjs(nota.fecha, "YYYY-MM-DDTHH:mm:ss").format("DD/MM HH:mm").toString() + "]",
                                     angle: -90,
                                     dx: -10,
                                     position: "center",

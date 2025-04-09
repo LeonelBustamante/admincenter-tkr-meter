@@ -223,7 +223,7 @@ const Reporte = ({ user }: { user: IUsuario }) => {
     const handleDobleClickGrafico = (evento: any) => {
         if (evento && evento.activeLabel) {
             console.log(evento);
-            
+
             const fechaFormateada = dayjs(evento.activeLabel, "DD/MM/YYYY HH:mm");
             setTimeNota(fechaFormateada);
             setModalNotaAbierto(true);
@@ -286,32 +286,6 @@ const Reporte = ({ user }: { user: IUsuario }) => {
                                                         onDoubleClick={handleDobleClickGrafico}
                                                     />
                                                 </Col>
-                                            </Row>
-                                        )}
-
-                                    {/* Gráficos separados (si está seleccionado) */}
-                                    {!cargandoDatos &&
-                                        viewMode === "separate" &&
-                                        Object.entries(chartsData).length > 0 && (
-                                            <Row gutter={[0, 16]}>
-                                                {Object.entries(chartsData).map(([canalId, chartData]) => (
-                                                    <Col span={24} key={canalId}>
-                                                        <Title level={4}>{chartData.canal.nombre}</Title>
-                                                        <div
-                                                            ref={(ref) => {
-                                                                chartRefs.current[Number(canalId)] = ref;
-                                                            }}
-                                                        >
-                                                            <ReporteChart
-                                                                chartData={chartData.data}
-                                                                notas={notas}
-                                                                uniMedida={chartData.canal.unidad || ""}
-                                                                onDoubleClick={handleDobleClickGrafico}
-                                                                onCaptureClick={() => {}}
-                                                            />
-                                                        </div>
-                                                    </Col>
-                                                ))}
                                             </Row>
                                         )}
 
