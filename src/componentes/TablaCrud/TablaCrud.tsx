@@ -50,7 +50,6 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
             dataIndex: key,
             key: key,
             render: (valor: any) => {
-                // Si la columna incluye "fecha", formateamos con dayjs
                 if (key.toLowerCase().includes("fecha") && valor) {
                     return dayjs(valor).format("DD/MM/YYYY HH:mm:ss");
                 }
@@ -65,22 +64,24 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
             columnas.push({
                 title: "Acciones",
                 key: "acciones",
-                render: (_: any, registro: Elemento) => (
-                    <Space>
-                        {endpoint.includes("ubicaciones") && (
-                            <Button
-                                type="link"
-                                onClick={() =>
-                                    window.open(
-                                        `https://www.google.com/maps/search/?api=1&query=${registro.latitud},${registro.longitud}`
-                                    )
-                                }
-                            >
-                                Ver en mapa
-                            </Button>
-                        )}
-                    </Space>
-                ),
+                render: (_: any, registro: Elemento) => {
+                    return (
+                        <Space>
+                            {endpoint.includes("ubicaciones") && (
+                                <Button
+                                    type="link"
+                                    onClick={() =>
+                                        window.open(
+                                            `https://www.google.com/maps/search/?api=1&query=${registro.latitud},${registro.longitud}`
+                                        )
+                                    }
+                                >
+                                    Ver en mapa
+                                </Button>
+                            )}
+                        </Space>
+                    );
+                },
             });
     }
 
@@ -95,7 +96,6 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
             <Table
                 dataSource={datos}
                 columns={columnas.map((col) => {
-                    // Si es la columna de acciones, ajustamos según los permisos
                     if (col.key === "acciones") {
                         return {
                             ...col,

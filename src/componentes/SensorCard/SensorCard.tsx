@@ -11,11 +11,7 @@ interface TablaCrudProps {
     ultimoValor: number;
 }
 
-const SensorCard: React.FC<TablaCrudProps> = ({
-    canal,
-    cargando,
-    ultimoValor,
-}) => {
+const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) => {
     const isPileta = canal.nombre.toLowerCase().includes("pileta");
     const isPresion = canal.nombre.toLowerCase().includes("presion");
     const isCaudal = canal.nombre.toLowerCase().includes("caudal");
@@ -41,11 +37,7 @@ const SensorCard: React.FC<TablaCrudProps> = ({
             data: {
                 target: ultimoValor,
                 total: canal.valor_maximo,
-                thresholds: [
-                    canal.valor_maximo * 0.8,
-                    canal.valor_maximo * 0.9,
-                    canal.valor_maximo,
-                ],
+                thresholds: [canal.valor_maximo * 0.8, canal.valor_maximo * 0.9, canal.valor_maximo],
             },
             scale: {
                 color: {
@@ -53,7 +45,7 @@ const SensorCard: React.FC<TablaCrudProps> = ({
                 },
             },
             style: {
-                textContent: (target, total) => `${target} PSI`,
+                textContent: (target: any) => `${target} PSI`,
             },
         };
     } else if (isCaudal) {
@@ -115,9 +107,7 @@ const SensorCard: React.FC<TablaCrudProps> = ({
                     ) : isCaudal ? (
                         <Tiny.Ring {...config} />
                     ) : (
-                        <Text style={{ fontSize: "2em" }}>
-                            15.000 {canal.unidad}
-                        </Text>
+                        <Text style={{ fontSize: "2em" }}>15.000 {canal.unidad}</Text>
                     )}
                 </Col>
             </Row>

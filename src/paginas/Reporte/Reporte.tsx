@@ -1,6 +1,6 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { PDFViewer } from "@react-pdf/renderer";
-import { Button, Col, ConfigProvider, Form, message, Result, Row, Typography } from "antd";
+import { Button, Col, ConfigProvider, Form, message, Result, Row } from "antd";
 import esES from "antd/es/locale/es_ES";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/es";
@@ -13,10 +13,7 @@ import { api } from "../../servicios";
 import { ICanal, IEquipo, IUsuario } from "../../types";
 import ReporteForm from "./components/ReporteForm";
 import useNotas from "../../hooks/useNotas";
-import ReporteChart from "./components/ReporteChart";
 import ReporteCombinedChart from "./components/ReporteCombinedChart";
-
-const { Title } = Typography;
 
 // Colores predefinidos para las líneas de los diferentes canales
 const CHART_COLORS = [
@@ -47,9 +44,6 @@ interface ChartDataState {
     };
 }
 
-// Tipo de visualización del gráfico
-type ChartViewMode = "separate" | "combined";
-
 const Reporte = ({ user }: { user: IUsuario }) => {
     const [form] = Form.useForm<any>();
     const [pdfData, setPdfData] = useState<IValoresParaPDF | null>(null);
@@ -60,20 +54,15 @@ const Reporte = ({ user }: { user: IUsuario }) => {
     const [chartsData, setChartsData] = useState<ChartDataState>({});
     const [cargandoDatos, setCargandoDatos] = useState<boolean>(false);
 
-    // Estado para controlar el modo de visualización del gráfico
-    const [viewMode, setViewMode] = useState<ChartViewMode>("combined");
-
     const [messageApi, contextHolder] = message.useMessage();
     const [fecha, setTimeNota] = useState<any>();
     const [modalNotaAbierto, setModalNotaAbierto] = useState(false);
     const { datos: equipos, cargando: cargandoEquipos, error: errorEquipos } = useEquipo();
-    const { datos: notas, cargando: notasCargando, error: notasError } = useNotas();
+    const { datos: notas } = useNotas();
 
     /** Cierra el modal */
     const cerrarModalNota = () => setModalNotaAbierto(false);
 
-    // Refs para los contenedores de los charts (lo que queremos capturar)
-    const chartRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const combinedChartRef = useRef<HTMLDivElement>(null);
 
     const agregarNota = async (valores: { fecha: string; texto: string }) => {
@@ -158,57 +147,11 @@ const Reporte = ({ user }: { user: IUsuario }) => {
         try {
             let canvas: HTMLCanvasElement | null = null;
 
-            if (viewMode === "combined") {
-                // Capturar el gráfico combinado
-                if (!combinedChartRef.current) {
-                    messageApi.error("No se encontró el gráfico combinado");
-                    return;
-                }
-                canvas = await html2canvas(combinedChartRef.current);
-            } else {
-                // Capturar múltiples gráficos y combinarlos
-                if (Object.keys(chartRefs.current).length === 0) {
-                    messageApi.error("No se encontraron referencias a los gráficos");
-                    return;
-                }
-
-                const canvasPromises = Object.entries(chartRefs.current).map(async ([canalId, ref]) => {
-                    if (!ref) return null;
-                    const canvas = await html2canvas(ref);
-                    return { id: canalId, canvas };
-                });
-
-                const canvases = await Promise.all(canvasPromises);
-                const validCanvases = canvases.filter((c) => c !== null) as { id: string; canvas: HTMLCanvasElement }[];
-
-                if (validCanvases.length === 0) {
-                    messageApi.error("No se pudieron capturar los gráficos");
-                    return;
-                }
-
-                // Crear un canvas combinado con todos los gráficos
-                const combinedCanvas = document.createElement("canvas");
-                const ctx = combinedCanvas.getContext("2d");
-
-                if (!ctx) {
-                    messageApi.error("No se pudo crear el canvas combinado");
-                    return;
-                }
-
-                // Definir el tamaño del canvas combinado
-                const singleHeight = validCanvases[0].canvas.height;
-                const singleWidth = validCanvases[0].canvas.width;
-
-                combinedCanvas.width = singleWidth;
-                combinedCanvas.height = singleHeight * validCanvases.length;
-
-                // Dibujar cada canvas en el canvas combinado
-                validCanvases.forEach((item, index) => {
-                    ctx.drawImage(item.canvas, 0, index * singleHeight);
-                });
-
-                canvas = combinedCanvas;
+            if (!combinedChartRef.current) {
+                messageApi.error("No se encontró el gráfico combinado");
+                return;
             }
+            canvas = await html2canvas(combinedChartRef.current);
 
             if (canvas) {
                 const imgData = canvas.toDataURL("image/png");
@@ -274,20 +217,18 @@ const Reporte = ({ user }: { user: IUsuario }) => {
                                     )}
 
                                     {/* Gráfico combinado (si está seleccionado) */}
-                                    {!cargandoDatos &&
-                                        viewMode === "combined" &&
-                                        Object.entries(chartsData).length > 0 && (
-                                            <Row>
-                                                <Col span={24}>
-                                                    <ReporteCombinedChart
-                                                        ref={combinedChartRef}
-                                                        canalesData={getCanalesDataForCombinedChart()}
-                                                        notas={notas}
-                                                        onDoubleClick={handleDobleClickGrafico}
-                                                    />
-                                                </Col>
-                                            </Row>
-                                        )}
+                                    {!cargandoDatos && Object.entries(chartsData).length > 0 && (
+                                        <Row>
+                                            <Col span={24}>
+                                                <ReporteCombinedChart
+                                                    ref={combinedChartRef}
+                                                    canalesData={getCanalesDataForCombinedChart()}
+                                                    notas={notas}
+                                                    onDoubleClick={handleDobleClickGrafico}
+                                                />
+                                            </Col>
+                                        </Row>
+                                    )}
 
                                     {/* Botón para generar PDF */}
                                     {!cargandoDatos && Object.keys(chartsData).length > 0 && (

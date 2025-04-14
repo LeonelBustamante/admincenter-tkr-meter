@@ -89,12 +89,7 @@ const RT: React.FC<IRT> = ({ tipoPermiso }) => {
                         ))}
                     </Select>
                     {equipoSeleccionado && plc && (
-                        <DashboardRT
-                            id_plc={plc?.id}
-                            ip_plc={plc?.ip}
-                            port_plc={plc?.port}
-                            soloLectura={tipoPermiso === "VER"}
-                        />
+                        <DashboardRT id_plc={plc?.id} ip_plc={plc?.ip} port_plc={plc?.port} />
                     )}
                 </>
             )}

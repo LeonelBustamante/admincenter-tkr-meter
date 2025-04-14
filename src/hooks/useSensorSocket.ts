@@ -19,7 +19,8 @@ const useSensorSocket = (ip?: string, port?: number) => {
         }
 
         // Crear nueva conexión
-        socketRef.current = io("http://localhost:5000", {
+        socketRef.current = io({
+            path: "/socket.io",
             transports: ["websocket"],
         });
 
