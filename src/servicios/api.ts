@@ -14,7 +14,7 @@ const obtenerCSRFToken = (): string | null => {
 };
 
 const api = axios.create({
-    baseURL: "/api",
+    baseURL: "",
     withCredentials: true, // Asegura que se envíen las cookies
 });
 
