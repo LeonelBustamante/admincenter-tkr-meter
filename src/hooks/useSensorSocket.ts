@@ -11,24 +11,49 @@ const useSensorSocket = (ip?: string, port?: number) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const socketRef = useRef<Socket | null>(null);
+    const plcSeleccionadoRef = useRef<{ ip?: string; port?: number }>({ ip, port });
 
     useEffect(() => {
+        // No reconectar si el PLC seleccionado es el mismo
+        if (
+            plcSeleccionadoRef.current.ip === ip &&
+            plcSeleccionadoRef.current.port === port &&
+            socketRef.current?.connected
+        ) {
+            return;
+        }
+
+        // Actualizar la referencia
+        plcSeleccionadoRef.current = { ip, port };
+
         // Desconectar socket anterior si existe
         if (socketRef.current) {
             socketRef.current.disconnect();
         }
 
+        // Si no hay IP proporcionada, no conectar
+        if (!ip) {
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+
         // Crear nueva conexión
-        socketRef.current = io({
-            path: "/socket.io",
+        socketRef.current = io("http://localhost:5000", {
             transports: ["websocket"],
         });
 
         socketRef.current.on("connect", () => {
-            if (ip) {
-                // Enviamos la IP y puerto una vez conectados
-                socketRef.current?.emit("seleccionar_plc", { ip, port });
-            }
+            console.log("Socket conectado, enviando selección de PLC:", ip, port);
+            // Enviamos la IP y puerto una vez conectados
+            socketRef.current?.emit("seleccionar_plc", { ip, port }, (response: any) => {
+                console.log("Respuesta de selección de PLC:", response);
+                if (response?.status === "error") {
+                    setError(response.message || "Error al seleccionar PLC");
+                    setLoading(false);
+                }
+            });
         });
 
         socketRef.current.on("actualizarDatos", (data) => {
@@ -42,8 +67,16 @@ const useSensorSocket = (ip?: string, port?: number) => {
             setLoading(false);
         });
 
+        socketRef.current.on("disconnect", (reason) => {
+            console.log("Socket desconectado:", reason);
+            if (reason === "io server disconnect") {
+                // El servidor forzó la desconexión
+                setError("Desconectado por el servidor");
+            }
+        });
+
         return () => {
-            console.log("Desconectando socket...");
+            console.log("Limpiando efecto, desconectando socket...");
             if (socketRef.current) {
                 socketRef.current.disconnect();
             }
@@ -56,7 +89,15 @@ const useSensorSocket = (ip?: string, port?: number) => {
         socketRef.current?.disconnect();
     };
 
-    return { datos, loading, error, disconnect };
+    // Función para reconectar manualmente si es necesario
+    const reconnect = () => {
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+            socketRef.current.connect();
+        }
+    };
+
+    return { datos, loading, error, disconnect, reconnect };
 };
 
 export default useSensorSocket;
