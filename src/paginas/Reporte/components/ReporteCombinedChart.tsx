@@ -90,7 +90,7 @@ const ReporteCombinedChart = forwardRef(
                             formatter={(value, name) => {
                                 console.log("props", name, " type", typeof name);
 
-                                const canalId = parseInt(name.split("_")[1]);
+                                const canalId = parseInt(String(name).split("_")[1]);
                                 const canal = canalesData.find((c) => c.id === canalId);
                                 return [`${value} ${canal?.unidad || ""}`, canal?.nombre || name];
                             }}

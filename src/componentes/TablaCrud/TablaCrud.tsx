@@ -64,7 +64,8 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
             columnas.push({
                 title: "Acciones",
                 key: "acciones",
-                render: (_: any, registro: Elemento) => {
+                dataIndex: "acciones", // Add a dummy dataIndex
+                render: (valor: any) => {
                     return (
                         <Space>
                             {endpoint.includes("ubicaciones") && (
@@ -72,7 +73,7 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
                                     type="link"
                                     onClick={() =>
                                         window.open(
-                                            `https://www.google.com/maps/search/?api=1&query=${registro.latitud},${registro.longitud}`
+                                            `https://www.google.com/maps/search/?api=1&query=${valor.latitud},${valor.longitud}`
                                         )
                                     }
                                 >
