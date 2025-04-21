@@ -6,7 +6,7 @@ import { ICanal, IEquipo } from "../../../types";
 import { DownOutlined } from "@ant-design/icons";
 
 const { Item } = Form;
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { RangePicker } = DatePicker;
 const MAX_COUNT = 3;
 
