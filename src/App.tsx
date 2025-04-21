@@ -44,7 +44,6 @@ const App: React.FC = () => {
                     gestion_usuarios: "NO",
                     generar_reportes: "NO",
                 };
-                console.log("Permisos inicializados con valores por defecto:", nuevoUsuario);
             }
             setUsuario(nuevoUsuario);
         } else {

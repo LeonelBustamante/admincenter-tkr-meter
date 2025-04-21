@@ -165,8 +165,6 @@ const Reporte = ({ user }: { user: IUsuario }) => {
     // Función para manejar el doble click en el gráfico
     const handleDobleClickGrafico = (evento: any) => {
         if (evento && evento.activeLabel) {
-            console.log(evento);
-
             const fechaFormateada = dayjs(evento.activeLabel, "DD/MM/YYYY HH:mm");
             setTimeNota(fechaFormateada);
             setModalNotaAbierto(true);
