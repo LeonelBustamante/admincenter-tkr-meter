@@ -181,7 +181,7 @@ const ModalUbicacion: React.FC<ModalUbicacionProps> = ({ visible, onCancel, onSu
                 >
                     <Select placeholder="Seleccione un equipo" loading={cargandoEquipos}>
                         {equipos.map((equipo) => (
-                            <Option key={equipo.idEquipos} value={equipo.idEquipos}>
+                            <Option key={equipo.id} value={equipo.id}>
                                 {equipo.nombre}
                             </Option>
                         ))}
@@ -190,7 +190,6 @@ const ModalUbicacion: React.FC<ModalUbicacionProps> = ({ visible, onCancel, onSu
 
                 <Item
                     name="fecha_finalizacion"
-                    initialValue={initialValues?.fecha_finalizacion || ""}
                     label="Fecha de finalización"
                 >
                     <DatePicker

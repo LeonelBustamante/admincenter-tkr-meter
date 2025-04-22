@@ -56,7 +56,7 @@ const ModalCliente: React.FC<ModalClienteProps> = ({ visible, onCancel, onSubmit
         >
             <Form form={form} layout="vertical" size="large">
                 <Item
-                    name="strnombre"
+                    name="nombre"
                     label="Nombre del cliente"
                     initialValue={initialValues?.nombre || ""}
                     rules={[{ required: true, message: "Por favor ingrese el nombre del cliente" }]}

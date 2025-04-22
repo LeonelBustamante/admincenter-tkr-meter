@@ -32,8 +32,8 @@ const TablaCrud: React.FC<ITablaCrud> = ({ endpoint, permisoCrud }) => {
     const getIdFieldName = (): string => {
         const idMappings: Record<string, string> = {
             canales: "id",
-            clientes: "idclientes",
-            equipos: "idEquipos",
+            clientes: "id",
+            equipos: "id",
             plcs: "id",
             notas: "id",
             ubicaciones: "id",
@@ -88,26 +88,17 @@ const TablaCrud: React.FC<ITablaCrud> = ({ endpoint, permisoCrud }) => {
             // Transformar datos según el tipo de entidad
             let datosTransformados = { ...valores };
 
-            console.log("Datos transformados a enviar:", datosTransformados);
-
             if (elementoEditando) {
                 // Obtener el nombre del campo ID y el valor
                 const idFieldName = getIdFieldName();
-                console.log("ID Field Name:", idFieldName);
-                console.log("Elemento Editando:", elementoEditando);
 
                 const idValue = elementoEditando[idFieldName];
 
                 // Asegurarse de que el slash final esté presente en el endpoint base
                 const baseEndpoint = endpoint.endsWith("/") ? endpoint : `${endpoint}/`;
 
-                // Edición - Construir URL correcta con el ID adecuado
-                console.log("Base Endpoint:", baseEndpoint);
-                console.log("ID Value:", idValue);
-                console.log("URL de actualización:", `${baseEndpoint}${idValue}/`);
-
                 // Realizar la petición PUT con los datos transformados
-                await api.put(`${baseEndpoint}${idValue}/`, datosTransformados);
+                await api.patch(`${baseEndpoint}${idValue}/`, datosTransformados);
                 messageAPI.success("Registro actualizado con éxito");
             } else {
                 // Creación - usar los datos transformados
@@ -225,6 +216,8 @@ const TablaCrud: React.FC<ITablaCrud> = ({ endpoint, permisoCrud }) => {
 
         return titulos[tipoEntidad] || "Datos";
     };
+
+    console.log("Datos:", datos);
 
     return (
         <>

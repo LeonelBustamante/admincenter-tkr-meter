@@ -68,7 +68,7 @@ const ModalEquipo: React.FC<ModalEquipoProps> = ({ visible, onCancel, onSubmit, 
         >
             <Form form={form} layout="vertical" size="large">
                 <Item
-                    name="strNombre"
+                    name="nombre"
                     label="Nombre del equipo"
                     initialValue={initialValues?.nombre || ""}
                     rules={[{ required: true, message: "Por favor ingrese el nombre del equipo" }]}
@@ -84,7 +84,7 @@ const ModalEquipo: React.FC<ModalEquipoProps> = ({ visible, onCancel, onSubmit, 
                 >
                     <Select placeholder="Seleccione un cliente" loading={cargandoClientes} allowClear>
                         {clientes.map((cliente) => (
-                            <Option key={cliente.idclientes} value={cliente.idclientes}>
+                            <Option key={cliente.id} value={cliente.id}>
                                 {cliente.nombre}
                             </Option>
                         ))}

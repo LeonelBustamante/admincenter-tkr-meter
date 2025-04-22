@@ -43,8 +43,6 @@ const ModalPLC: React.FC<ModalPLCProps> = ({ visible, onCancel, onSubmit, initia
         if (visible) {
             form.resetFields();
             if (initialValues) {
-                console.log("Valores iniciales recibidos:", initialValues);
-
                 // Formatear los valores iniciales según corresponda
                 const formattedValues = {
                     ip: initialValues.ip,
@@ -54,7 +52,6 @@ const ModalPLC: React.FC<ModalPLCProps> = ({ visible, onCancel, onSubmit, initia
                     dtfechacreacion: initialValues.dtfechacreacion ? dayjs(initialValues.dtfechacreacion) : undefined,
                 };
 
-                console.log("Valores formateados para el formulario:", formattedValues);
                 form.setFieldsValue(formattedValues);
             }
         }
@@ -64,7 +61,6 @@ const ModalPLC: React.FC<ModalPLCProps> = ({ visible, onCancel, onSubmit, initia
     const handleSubmit = async () => {
         try {
             const values = await form.validateFields();
-            console.log("Valores a enviar desde el modal:", values);
 
             // Formatear fecha si existe
             if (values.dtfechacreacion) {

@@ -1,6 +1,5 @@
-import { Form, Input, Modal, Select, InputNumber, Switch, Space, Tooltip, Flex } from "antd";
+import { Form, Input, Modal, Select, InputNumber, Switch, Flex } from "antd";
 import { useEffect, useState } from "react";
-import { QuestionCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { api } from "../../../servicios";
 
@@ -43,14 +42,11 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
     // Efecto para resetear y cargar el formulario cuando cambia la visibilidad o initialValues
     useEffect(() => {
         if (visible) {
-            // Siempre resetear el formulario al abrir el modal
             form.resetFields();
 
-            // Si hay valores iniciales, configurarlos
             if (initialValues) {
                 const values = { ...initialValues };
 
-                // Formatear fechas si existen
                 if (values.dtfechacreacion) {
                     values.dtfechacreacion = dayjs(values.dtfechacreacion);
                 }
@@ -99,7 +95,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
         >
             <Form form={form} layout="vertical" size="large">
                 <Item
-                    name="strnombre"
+                    name="nombre"
                     label="Nombre del canal"
                     initialValue={initialValues?.nombre || ""}
                     rules={[{ required: true, message: "Por favor ingrese el nombre del canal" }]}
@@ -109,7 +105,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
 
                 <Flex gap={10}>
                     <Item
-                        name="strtipo"
+                        name="tipo"
                         label="Tipo de canal"
                         initialValue={initialValues?.tipo || "Analogico"}
                         rules={[{ required: true, message: "Por favor seleccione el tipo de canal" }]}
@@ -126,7 +122,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                     </Item>
 
                     <Item
-                        name="strunidad"
+                        name="unidad"
                         label="Unidad de medida"
                         initialValue={initialValues?.unidad || ""}
                         style={{ width: "50%" }}
@@ -137,7 +133,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
 
                 <Flex gap={10}>
                     <Item
-                        name="nvalorminimo"
+                        name="valor_minimo"
                         initialValue={initialValues?.valor_minimo || 0}
                         label="Mínimo convertido"
                         style={{ width: "50%" }}
@@ -146,7 +142,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                     </Item>
 
                     <Item
-                        name="nvalormaximo"
+                        name="valor_maximo"
                         label="Máximo convertido"
                         initialValue={initialValues?.valor_maximo || 0}
                         style={{ width: "50%" }}
@@ -157,7 +153,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
 
                 <Flex gap={10}>
                     <Item
-                        name="noffset"
+                        name="offset"
                         label="Offset"
                         initialValue={initialValues?.offset || 0}
                         style={{ width: "50%" }}
@@ -166,7 +162,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                     </Item>
 
                     <Item
-                        name="nMaxSensor"
+                        name="max_sensor"
                         label="Máximo del sensor"
                         initialValue={initialValues?.max_sensor || 0}
                         style={{ width: "50%" }}
@@ -177,7 +173,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
 
                 <Flex gap={10}>
                     <Item
-                        name="nEscala"
+                        name="escala"
                         label="Escala de conversión"
                         initialValue={initialValues?.escala || 100}
                         style={{ width: "50%" }}
@@ -186,7 +182,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                     </Item>
 
                     <Item
-                        name="nposicion"
+                        name="posicion"
                         label="Posición en la trama"
                         initialValue={initialValues?.posicion || 0}
                         style={{ width: "50%" }}
@@ -229,21 +225,11 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                     rules={[{ required: true, message: "Por favor seleccione un PLC" }]}
                 >
                     <Select placeholder="Seleccione un PLC" loading={cargandoPLCs}>
-                        {
-                            plcs
-                                .map((plc) => {
-                                    // Verificar que plc e idplc no sean null o undefined antes de usarlos
-                                    if (plc && plc.idplc !== null && plc.idplc !== undefined) {
-                                        return (
-                                            <Option key={plc.idplc} value={plc.idplc}>
-                                                {plc.strip || "PLC sin IP"}
-                                            </Option>
-                                        );
-                                    }
-                                    return null; // No renderizar opciones con valores nulos
-                                })
-                                .filter(Boolean) /* Eliminar elementos null */
-                        }
+                        {plcs.map((plc) => (
+                            <Option key={plc.id} value={plc.id}>
+                                {plc.ip}
+                            </Option>
+                        ))}
                     </Select>
                 </Item>
             </Form>
