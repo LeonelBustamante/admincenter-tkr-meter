@@ -90,7 +90,7 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
         <>
             {contextHolder}
             {permisoCrud === "SI" && (
-                <Button onClick={() => window.open(`/admin/${endpoint.split("/")[2]}`, "_blank")}>
+                <Button onClick={() => window.open(`:8000/admin/${endpoint.split("/")[2]}`, "_blank")}>
                     Crear nuevo registro
                 </Button>
             )}

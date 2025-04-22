@@ -43,7 +43,7 @@ const useSensorSocket = (ip?: string, port?: number) => {
     setLoading(true);
 
     // Crear nueva conexión
-    socketRef.current = io("http://192.168.2.114:5000", {
+    socketRef.current = io("http://192.168.2.114:5000",{
       transports: ["websocket"],
     });
 
