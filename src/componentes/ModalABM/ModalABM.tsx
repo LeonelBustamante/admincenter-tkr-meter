@@ -12,10 +12,9 @@ interface ModalNotaProps {
     valoresIniciales?: any;
 }
 
-const ModalNota: React.FC<ModalNotaProps> = ({ modalAbierto, handleCancelar, handleAgregar, valoresIniciales }) => {
+const ModalABM: React.FC<ModalNotaProps> = ({ modalAbierto, handleCancelar, handleAgregar, valoresIniciales }) => {
     const [formulario] = Form.useForm();
 
-    /** Envía los datos del formulario */
     const manejarEnvio = () => {
         formulario.validateFields().then((valores) => {
             handleAgregar({
@@ -51,4 +50,4 @@ const ModalNota: React.FC<ModalNotaProps> = ({ modalAbierto, handleCancelar, han
     );
 };
 
-export default ModalNota;
+export default ModalABM;
