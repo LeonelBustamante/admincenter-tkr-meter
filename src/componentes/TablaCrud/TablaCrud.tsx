@@ -64,6 +64,10 @@ const TablaCrud: React.FC<ITablaCrud> = ({ endpoint, permisoCrud }) => {
     const formatearHeaderTable = (key: string) => {
         let respuesta = key.charAt(0).toUpperCase() + key.slice(1);
         respuesta = respuesta.replace("_", " ");
+
+        if (key === "dtfechacreacion") respuesta = "Fecha de Creación";
+        if (key === "port") respuesta = "Puerto";
+        if (key === "lactivo") respuesta = "Activo";
         return respuesta;
     };
 
@@ -131,7 +135,15 @@ const TablaCrud: React.FC<ITablaCrud> = ({ endpoint, permisoCrud }) => {
 
         // Columnas básicas basadas en los datos
         const columnas = Object.keys(datos[0])
-            .filter((key) => !key.includes("password") && !key.includes("id"))
+            .filter(
+                (key) =>
+                    !key.includes("password") &&
+                    !key.includes("id") &&
+                    !key.includes("equipo") &&
+                    !key.includes("canal") &&
+                    !key.includes("plc") &&
+                    !key.includes("cliente")
+            )
             .map((key) => ({
                 title: formatearHeaderTable(key),
                 dataIndex: key,
@@ -216,8 +228,6 @@ const TablaCrud: React.FC<ITablaCrud> = ({ endpoint, permisoCrud }) => {
 
         return titulos[tipoEntidad] || "Datos";
     };
-
-    console.log("Datos:", datos);
 
     return (
         <>
