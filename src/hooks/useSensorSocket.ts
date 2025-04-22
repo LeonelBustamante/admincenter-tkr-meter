@@ -50,17 +50,12 @@ const useSensorSocket = (ip?: string, port?: number) => {
     socketRef.current.on("connect", () => {
       console.log("Socket conectado");
       // Enviamos la IP y puerto una vez conectados
-      socketRef.current?.emit(
-        "seleccionar_plc",
-        { ip, port },
-        (response: any) => {
-          console.log("Respuesta de selección de PLC:", response);
+            socketRef.current?.emit("seleccionar_plc", { ip, port }, (response: any) => {
           if (response?.status === "error") {
             setError(response.message || "Error al seleccionar PLC");
             setLoading(false);
           }
-        }
-      );
+            });
     });
 
     socketRef.current.on("actualizarDatos", (data) => {
@@ -75,7 +70,6 @@ const useSensorSocket = (ip?: string, port?: number) => {
     });
 
     socketRef.current.on("disconnect", (reason) => {
-      console.log("Socket desconectado:", reason);
       if (reason === "io server disconnect") {
         // El servidor forzó la desconexión
         setError("Desconectado por el servidor");
