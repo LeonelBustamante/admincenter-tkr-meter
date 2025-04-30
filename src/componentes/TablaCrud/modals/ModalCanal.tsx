@@ -1,4 +1,4 @@
-import { Form, Input, Modal, Select, InputNumber, Switch, Flex } from "antd";
+import { Form, Input, Modal, Select, InputNumber, Switch, Flex, Image, Checkbox, Radio, Col, Row } from "antd";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { api } from "../../../servicios";
@@ -94,14 +94,82 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
             maskClosable={false}
         >
             <Form form={form} layout="vertical" size="large">
-                <Item
-                    name="nombre"
-                    label="Nombre del canal"
-                    initialValue={initialValues?.nombre || ""}
-                    rules={[{ required: true, message: "Por favor ingrese el nombre del canal" }]}
-                >
-                    <Input placeholder="Nombre del canal" maxLength={100} />
-                </Item>
+                <Flex gap={10}>
+                    <Item
+                        name="nombre"
+                        label="Nombre del canal"
+                        style={{ width: "50%" }}
+                        initialValue={initialValues?.nombre || ""}
+                        rules={[{ required: true, message: "Por favor ingrese el nombre del canal" }]}
+                    >
+                        <Input placeholder="Nombre del canal" maxLength={100} />
+                    </Item>
+                    <Item
+                        name="tipo_vista"
+                        label="Tipo de grafico"
+                        initialValue={initialValues?.tipo || "gauge"}
+                        rules={[{ required: true, message: "Por favor seleccione el tipo de grafico" }]}
+                        style={{ width: "50%" }}
+                    >
+                        <Radio.Group
+                            value={"chart"}
+                            options={[
+                                {
+                                    value: "char",
+                                    label: (
+                                        <Flex align="center">
+                                            <Image
+                                                src="/chart.png"
+                                                preview={false}
+                                                style={{ width: 100, height: "auto", marginRight: 8 }}
+                                            />
+                                            <span>Chart</span>
+                                        </Flex>
+                                    ),
+                                },
+                                {
+                                    value: "gauge",
+                                    label: (
+                                        <Flex align="center">
+                                            <Image
+                                                src="/gauge.png"
+                                                preview={false}
+                                                style={{ width: 100, height: "auto", marginRight: 8 }}
+                                            />
+                                            <span>Gauge</span>
+                                        </Flex>
+                                    ),
+                                },
+                                {
+                                    value: "liquid",
+                                    label: (
+                                        <Flex align="center">
+                                            <Image
+                                                src="/liquid.png"
+                                                preview={false}
+                                                style={{ width: 100, height: "auto", marginRight: 8 }}
+                                            />
+                                            <span>Liquid</span>
+                                        </Flex>
+                                    ),
+                                },
+                                {
+                                    value: "ring",
+                                    label: (
+                                        <Flex align="center">
+                                            <Image
+                                                src="/ring.png"
+                                                preview={false}
+                                                style={{ width: 100, height: "auto", marginRight: 8 }}
+                                            />
+                                            <span>Ring</span>
+                                        </Flex>
+                                    ),
+                                },
+                            ]}
+                        />
+                    </Item>
+                </Flex>
 
                 <Flex gap={10}>
                     <Item

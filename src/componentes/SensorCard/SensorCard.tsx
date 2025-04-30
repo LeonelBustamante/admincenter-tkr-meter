@@ -12,13 +12,13 @@ interface TablaCrudProps {
 }
 
 const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) => {
-    const isPileta = canal.nombre.toLowerCase().includes("pileta");
-    const isPresion = canal.nombre.toLowerCase().includes("presion");
-    const isCaudal = canal.nombre.toLowerCase().includes("caudal");
+    const vistaLiquid = canal.tipo_vista === "liquid";
+    const vistaGauge = canal.tipo_vista === "gauge";
+    const vistaRing = canal.tipo_vista === "ring";
 
     let config = {};
 
-    if (isPileta) {
+    if (vistaLiquid) {
         config = {
             autoFit: true,
             autoResize: true,
@@ -29,7 +29,7 @@ const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) 
                 waveLength: 40,
             },
         };
-    } else if (isPresion) {
+    } else if (vistaGauge) {
         config = {
             autoFit: true,
             autoResize: true,
@@ -48,7 +48,7 @@ const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) 
                 textContent: (target: any) => `${target} PSI`,
             },
         };
-    } else if (isCaudal) {
+    } else if (vistaRing) {
         config = {
             percent: ultimoValor / canal.valor_maximo,
             autoFit: true,
@@ -58,11 +58,11 @@ const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) 
                 {
                     type: "text",
                     style: {
-                        text: `${ultimoValor} m³/h`,
+                        text: `${ultimoValor} ${canal.unidad}`,
                         x: "50%",
                         y: "50%",
                         textAlign: "center",
-                        fontSize: 25,
+                        fontSize: "3em",
                         fontStyle: "bold",
                     },
                 },
@@ -93,18 +93,18 @@ const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) 
                     />
                     <Divider />
                     <Text style={{ fontSize: "2em" }}>
-                        {isPileta && `${ultimoValor} ${canal.unidad}`}
-                        {isPresion && `${ultimoValor} ${canal.unidad}`}
-                        {isCaudal && `${ultimoValor} ${canal.unidad}`}
+                        {vistaLiquid && `${ultimoValor} ${canal.unidad}`}
+                        {vistaGauge && `${ultimoValor} ${canal.unidad}`}
+                        {vistaRing && `${ultimoValor} ${canal.unidad}`}
                     </Text>
                 </Col>
                 {/* lado derecho */}
                 <Col span={12} style={{ height: "200px" }}>
-                    {isPileta ? (
+                    {vistaLiquid ? (
                         <Liquid {...config} />
-                    ) : isPresion ? (
+                    ) : vistaGauge ? (
                         <Gauge {...config} />
-                    ) : isCaudal ? (
+                    ) : vistaRing ? (
                         <Tiny.Ring {...config} />
                     ) : (
                         <Text style={{ fontSize: "2em" }}>15.000 {canal.unidad}</Text>

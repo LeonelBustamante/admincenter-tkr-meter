@@ -13,4 +13,5 @@ export interface ICanal {
     offset: number;
     lR3S: boolean;
     plc_ip: string;
+    tipo_vista: string;
 }

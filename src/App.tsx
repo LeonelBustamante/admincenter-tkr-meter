@@ -69,7 +69,7 @@ const App: React.FC = () => {
 
     return (
         <BrowserRouter>
-            <Layout style={{ width: "100vw", height: "100vh" }}>
+            <Layout style={{ minWidth: "100vw", minHeight: "100vh" }}>
                 <Header
                     style={{
                         display: "flex",
