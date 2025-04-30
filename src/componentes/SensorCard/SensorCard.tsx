@@ -142,6 +142,7 @@ const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) 
     return (
         <Card
             loading={cargando}
+            draggable
             actions={[
                 <Text type="secondary" style={{ color: "green" }}>
                     Mínimo {canal.valor_minimo}

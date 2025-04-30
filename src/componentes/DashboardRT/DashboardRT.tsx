@@ -1,6 +1,9 @@
 import { LoadingOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Col, message, Result, Row, Typography, Button } from "antd";
 import { useEffect, useState } from "react";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { SensorCard } from "../../componentes";
 import useSensorSocket from "../../hooks/useSensorSocket";
 import { api } from "../../servicios";
@@ -11,71 +14,118 @@ const { Title } = Typography;
 interface DashboardRTProps {
     ip_plc: string;
     id_plc: number;
-    port_plc: number;
+    port_plc?: number;
 }
+
+// Componente “sortable” que envuelve cada Col+SensorCard
+interface SortableItemProps {
+    canal: ICanal;
+    ultimoValor: number;
+    cargando: boolean;
+}
+const SortableItem: React.FC<SortableItemProps> = ({ canal, ultimoValor, cargando }) => {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: canal.id });
+
+    const style: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        cursor: "grab",
+    };
+
+    return (
+        <Col xs={24} sm={12} md={8} lg={8} ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            <SensorCard canal={canal} cargando={cargando} ultimoValor={ultimoValor} />
+        </Col>
+    );
+};
 
 const DashboardRT: React.FC<DashboardRTProps> = ({ ip_plc, id_plc, port_plc = 502 }) => {
     const [canales, setCanales] = useState<ICanal[]>([]);
-    const [cargando, setCargando] = useState<boolean>(true);
+    const [orderedCanales, setOrderedCanales] = useState<ICanal[]>([]);
+    const [cargando, setCargando] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Usar nuestro hook actualizado
     const { datos, loading: socketLoading, error: socketError, reconnect } = useSensorSocket(ip_plc, port_plc);
 
-    // Función para cargar datos
-    const cargarDatos = async () => {
+    // Sensores para dnd-kit
+    const sensors = useSensors(useSensor(PointerSensor));
+
+    // 1) Carga inicial
+    const cargarCanales = async () => {
         setCargando(true);
         setError(null);
-
         try {
-            // Cargar los canales del PLC usando su ID
-            const canalesResponse = await api.get(`/api/canales/?plc_id=${id_plc}`);
-
-            if (!canalesResponse.data.length) {
-                setError("No se encontraron canales para este PLC");
-                setCargando(false);
-                return;
-            }
-
-            setCanales(canalesResponse.data);
-        } catch (err) {
-            setError("Error al cargar datos del sistema");
-            message.error("Error al cargar datos");
+            const resp = await api.get<ICanal[]>(`/api/canales/?plc_id=${id_plc}`);
+            setCanales(resp.data);
+        } catch {
+            setError("No se pudo cargar la lista de canales.");
         } finally {
             setCargando(false);
         }
     };
 
-    // Cargar los canales cuando cambia el ID del PLC
     useEffect(() => {
-        if (id_plc) {
-            cargarDatos();
-        }
+        if (id_plc) cargarCanales();
     }, [id_plc]);
 
-    // Función para manejar reconexión manual
-    const handleReconectar = () => {
-        message.info("Reconectando con el PLC...");
-        reconnect();
-        cargarDatos();
+    // 2) Al cambiar “canales”, aplico orden guardado o el orden original
+    useEffect(() => {
+        if (!canales.length) {
+            setOrderedCanales([]);
+            return;
+        }
+        const key = `canal-order-${id_plc}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            try {
+                const ids = JSON.parse(saved) as number[];
+                const sorted = ids.map((id) => canales.find((c) => c.id === id)).filter((c): c is ICanal => !!c);
+                const rest = canales.filter((c) => !ids.includes(c.id));
+                setOrderedCanales([...sorted, ...rest]);
+                return;
+            } catch {
+                // si falla el parse, ignoro
+            }
+        }
+        setOrderedCanales(canales);
+    }, [canales, id_plc]);
+
+    // 3) Al terminar el drag, reordeno y guardo
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = orderedCanales.findIndex((c) => c.id === active.id);
+        const newIndex = orderedCanales.findIndex((c) => c.id === over.id);
+        const newOrder = arrayMove(orderedCanales, oldIndex, newIndex);
+
+        setOrderedCanales(newOrder);
+        const ids = newOrder.map((c) => c.id);
+        localStorage.setItem(`canal-order-${id_plc}`, JSON.stringify(ids));
+
+        // Si quieres guardarlo en backend:
+        // api.post("/api/canales/reorder", { plc_id: id_plc, order: ids });
     };
 
-    // Manejar casos de error
+    const handleReconectar = () => {
+        message.info("Reconectando al PLC...");
+        reconnect();
+        cargarCanales();
+    };
+
     if (error || socketError) {
         return (
             <Result
                 status="error"
                 title={error || socketError || "Error al cargar datos"}
-                extra={[
-                    <Button key="reconnect" type="primary" icon={<ReloadOutlined />} onClick={handleReconectar}>
+                extra={
+                    <Button onClick={handleReconectar} icon={<ReloadOutlined />} type="primary">
                         Reconectar
-                    </Button>,
-                ]}
+                    </Button>
+                }
             />
         );
     }
-
-    // Manejar caso de carga
     if (cargando) {
         return <Result icon={<LoadingOutlined />} title="Cargando datos..." />;
     }
@@ -85,7 +135,7 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ ip_plc, id_plc, port_plc = 50
             {id_plc && ip_plc ? (
                 <>
                     <Title level={2}>
-                        Telemetría de PLC ({`${ip_plc}:${port_plc}`})
+                        Telemetría de PLC ({ip_plc}:{port_plc})
                         <Button
                             type="text"
                             icon={<ReloadOutlined />}
@@ -93,37 +143,27 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ ip_plc, id_plc, port_plc = 50
                             style={{ marginLeft: 16 }}
                         />
                     </Title>
-                    <Row gutter={[16, 16]}>
-                        {canales.length > 0 ? (
-                            canales.map((canal) => (
-                                <Col key={canal.id} xs={24} sm={12} md={8} lg={8}>
-                                    <SensorCard
+
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={orderedCanales.map((c) => c.id)} strategy={rectSortingStrategy}>
+                            <Row gutter={[16, 16]}>
+                                {orderedCanales.map((canal) => (
+                                    <SortableItem
+                                        key={canal.id}
                                         canal={canal}
                                         cargando={socketLoading}
-                                        ultimoValor={
-                                            datos.value && datos.value.length > 0
-                                                ? datos.value[canal.posicion - 1] || 0
-                                                : 0
-                                        }
+                                        ultimoValor={datos.value?.[canal.posicion - 1] ?? 0}
                                     />
-                                </Col>
-                            ))
-                        ) : (
-                            <Col span={24}>
-                                <Result
-                                    status="info"
-                                    title="No hay canales disponibles"
-                                    subTitle="Este PLC no tiene canales configurados"
-                                />
-                            </Col>
-                        )}
-                    </Row>
+                                ))}
+                            </Row>
+                        </SortableContext>
+                    </DndContext>
                 </>
             ) : (
                 <Result
                     status="warning"
                     title="PLC no encontrado"
-                    subTitle="No se pudo cargar la información del PLC"
+                    subTitle="Verifica la configuración de IP y puerto"
                 />
             )}
         </>
