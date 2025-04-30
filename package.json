@@ -18,6 +18,7 @@
     "axios": "^1.8.3",
     "dayjs": "^1.11.13",
     "html2canvas": "^1.4.1",
+    "leaflet": "^1.9.4",
     "react": "^19.0.0-rc.1",
     "react-dom": "^19.0.0-rc.1",
     "react-pdf": "^9.2.1",

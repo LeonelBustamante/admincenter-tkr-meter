@@ -1,5 +1,5 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import { message, Result, Select, Typography } from "antd";
+import { Flex, message, Result, Select, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { api } from "../../servicios";
 import { DashboardRT } from "../../componentes";
@@ -75,19 +75,25 @@ const RT: React.FC<IRT> = ({ tipoPermiso }) => {
             {cargando && <Result icon={<LoadingOutlined />} title="Cargando..." />}
             {!cargando && !error && (
                 <>
-                    <Title level={2}>{tipoPermiso === "SI" ? "Telemetría" : "Visualización (Solo lectura)"}</Title>
-                    <Select
-                        size="large"
-                        placeholder="Seleccionar PLC"
-                        onChange={handleEquipoChange}
-                        style={{ width: "50%", marginBottom: 20 }}
-                    >
-                        {equipos.map((equipo) => (
-                            <Select.Option key={equipo.id} value={equipo.nombre}>
-                                {equipo.nombre}
-                            </Select.Option>
-                        ))}
-                    </Select>
+                    <Flex justify="space-between" align="center" style={{ marginBottom: 20 }}>
+                        <div style={{ width: "100%" }}>
+                            <Title level={2}>
+                                {tipoPermiso === "SI" ? "Telemetría" : "Visualización (Solo lectura)"}
+                            </Title>
+                            <Select
+                                size="large"
+                                placeholder="Seleccionar PLC"
+                                onChange={handleEquipoChange}
+                                style={{ width: "50%", marginBottom: 20 }}
+                            >
+                                {equipos.map((equipo) => (
+                                    <Select.Option key={equipo.id} value={equipo.nombre}>
+                                        {equipo.nombre}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </div>
+                    </Flex>
                     {equipoSeleccionado && plc && (
                         <DashboardRT id_plc={plc?.id} ip_plc={plc?.ip} port_plc={plc?.port} />
                     )}

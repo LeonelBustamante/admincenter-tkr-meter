@@ -1,6 +1,8 @@
 import { Card, Typography, Divider, Row, Col } from "antd";
-import { Gauge, Liquid, Tiny } from "@ant-design/charts";
+import { Gauge, Line, Liquid, Tiny } from "@ant-design/charts";
 import { ICanal } from "../../types";
+import { useEffect, useState } from "react";
+import dayjs, { Dayjs } from "dayjs";
 
 const { Meta } = Card;
 const { Text, Title } = Typography;
@@ -13,8 +15,22 @@ interface TablaCrudProps {
 
 const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) => {
     const vistaLiquid = canal.tipo_vista === "liquid";
+    const vistaChart = canal.tipo_vista === "chart";
     const vistaGauge = canal.tipo_vista === "gauge";
     const vistaRing = canal.tipo_vista === "ring";
+    const [data, setData] = useState<{ time: string; value: any }[]>([]);
+
+    useEffect(() => {
+        // solo cuando haya un valor válido
+        if (typeof ultimoValor === "number") {
+            const timestamp = dayjs().format("HH:mm:ss").toString();
+            const newPoint = { time: timestamp, value: ultimoValor };
+            setData((prev) => [
+                ...prev.slice(-99), // conservar solo últimos 100
+                newPoint,
+            ]);
+        }
+    }, [ultimoValor]);
 
     let config = {};
 
@@ -68,6 +84,59 @@ const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) 
                 },
             ],
         };
+    } else if (vistaChart) {
+        config = {
+            data,
+            xField: "time",
+            yField: "value",
+            height: 220,
+            axis: {
+                x: {
+                    labelSpacing: 4,
+                    style: {
+                        labelTransform: "rotate(90)",
+                    },
+                },
+            },
+            xAxis: {
+                type: "time", // eje de tiempo
+                tickCount: 10, // número de marcas
+            },
+            yAxis: {
+                nice: false,
+            },
+            scale: {
+                time: {
+                    type: "time",
+                },
+                y: {
+                    domain: [canal.valor_minimo, canal.valor_maximo],
+                },
+            },
+            point: false,
+            lineStyle: {
+                lineWidth: 2,
+            },
+            animation: {
+                appear: { duration: 0 },
+                update: { duration: 0 },
+            },
+            smooth: false,
+            interactions: [{ type: "element-active" }],
+            tooltip: {
+                // mostramos título, usando la fecha formateada
+                title: (datum: any) => dayjs(datum.time).format("DD/MM/YYYY HH:mm:ss"),
+                // definimos un solo ítem: canal “y” (tu yField) con nombre y formateo de valor
+                items: [
+                    {
+                        channel: "y",
+                        name: canal.nombre,
+                        // d3-formatter o función: aquí añadimos la unidad
+                        valueFormatter: (v: number) => `${v} ${canal.unidad}`,
+                    },
+                ],
+            },
+        };
     }
 
     return (
@@ -86,28 +155,30 @@ const SensorCard: React.FC<TablaCrudProps> = ({ canal, cargando, ultimoValor }) 
         >
             <Row gutter={[16, 16]}>
                 {/* lado izquierdo */}
-                <Col span={12}>
+                <Col span={8}>
                     <Meta
                         title={<Title level={4}>{canal.nombre}</Title>}
                         description={<Text type="secondary">{canal.tipo}</Text>}
                     />
                     <Divider />
                     <Text style={{ fontSize: "2em" }}>
-                        {vistaLiquid && `${ultimoValor} ${canal.unidad}`}
-                        {vistaGauge && `${ultimoValor} ${canal.unidad}`}
-                        {vistaRing && `${ultimoValor} ${canal.unidad}`}
+                        {ultimoValor} {canal.unidad}
                     </Text>
                 </Col>
                 {/* lado derecho */}
-                <Col span={12} style={{ height: "200px" }}>
+                <Col span={16} style={{ height: "200px" }}>
                     {vistaLiquid ? (
                         <Liquid {...config} />
                     ) : vistaGauge ? (
                         <Gauge {...config} />
                     ) : vistaRing ? (
                         <Tiny.Ring {...config} />
+                    ) : vistaChart ? (
+                        <Line {...config} />
                     ) : (
-                        <Text style={{ fontSize: "2em" }}>15.000 {canal.unidad}</Text>
+                        <Text style={{ fontSize: "2em" }}>
+                            {ultimoValor} {canal.unidad}
+                        </Text>
                     )}
                 </Col>
             </Row>

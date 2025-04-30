@@ -115,7 +115,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                             value={"chart"}
                             options={[
                                 {
-                                    value: "char",
+                                    value: "chart",
                                     label: (
                                         <Flex align="center">
                                             <Image
