@@ -52,12 +52,10 @@ const RT: React.FC<IRT> = ({ tipoPermiso }) => {
     };
 
     const handleEquipoChange = (value: string) => {
-        // Si hay un equipo seleccionado anteriormente, limpia el PLC
-        if (equipoSeleccionado) {
+        if (value !== equipoSeleccionado) {
+            setEquipoSeleccionado(value);
             setPlc(undefined);
         }
-
-        setEquipoSeleccionado(value);
     };
 
     useEffect(() => {
@@ -84,6 +82,7 @@ const RT: React.FC<IRT> = ({ tipoPermiso }) => {
                                 size="large"
                                 placeholder="Seleccionar PLC"
                                 onChange={handleEquipoChange}
+                                value={equipoSeleccionado}
                                 style={{ width: "50%", marginBottom: 20 }}
                             >
                                 {equipos.map((equipo) => (
