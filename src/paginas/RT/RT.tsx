@@ -164,9 +164,6 @@ const RT: React.FC<ITipoPermisoRT> = ({ tipoPermiso = "VER" }) => {
                         </Select.Option>
                     ))}
                 </Select>
-                <Button type="primary" onClick={guardarLayoutManual}>
-                    Guardar Layout
-                </Button>
             </Flex>
 
             {/* Dashboard de telemetría - solo se muestra si hay equipo y PLC seleccionados */}
