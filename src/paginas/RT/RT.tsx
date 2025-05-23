@@ -1,104 +1,192 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import { Flex, message, Result, Select, Typography } from "antd";
-import { useEffect, useState } from "react";
-import { api } from "../../servicios";
+import { Button, Flex, message, Result, Select, Typography } from "antd";
+import { useEffect, useState, useCallback } from "react";
 import { DashboardRT } from "../../componentes";
+import { api } from "../../servicios";
 import { IEquipo, IPlc } from "../../types";
 
 const { Title } = Typography;
-interface IRT {
+
+/**
+ * Interfaz para definir los tipos de permisos del componente RT
+ * @interface ITipoPermisoRT
+ */
+interface ITipoPermisoRT {
+    /** Define el nivel de acceso: "VER" para solo lectura, "SI" para telemetría completa */
     tipoPermiso?: "VER" | "SI";
 }
 
-const RT: React.FC<IRT> = ({ tipoPermiso }) => {
-    const [equipos, setEquipo] = useState<IEquipo[]>([]);
-    const [equipoSeleccionado, setEquipoSeleccionado] = useState<string>();
-    const [cargando, setCargando] = useState<boolean>(false);
-    const [error, setError] = useState<boolean>(false);
-    const [plc, setPlc] = useState<IPlc>();
+/**
+ * Componente principal para la visualización de telemetría en tiempo real
+ * Permite seleccionar equipos y mostrar datos del PLC correspondiente
+ *
+ * @param tipoPermiso - Define si el usuario tiene permisos de solo lectura o completos
+ * @returns Componente React con interfaz de telemetría
+ */
+const RT: React.FC<ITipoPermisoRT> = ({ tipoPermiso = "VER" }) => {
+    // Estados principales del componente
+    const [listaEquiposDisponibles, setListaEquiposDisponibles] = useState<IEquipo[]>([]);
+    const [equipoActualmenteSeleccionado, setEquipoActualmenteSeleccionado] = useState<string>();
+    const [estadoCargandoDatos, setEstadoCargandoDatos] = useState<boolean>(false);
+    const [estadoErrorEnCarga, setEstadoErrorEnCarga] = useState<boolean>(false);
+    const [datosPlcSeleccionado, setDatosPlcSeleccionado] = useState<IPlc>();
 
-    const cargarCanales = () => {
-        setCargando(true);
-        api.get("/api/equipos/") // ACA DEBO CONSULTAR QUE CANALES CORRESPONDEN AL PLC
-            .then((response) => {
-                setEquipo(response.data);
-            })
-            .catch(() => {
-                message.error("Error al cargar datos");
-                setError(true);
-            })
-            .finally(() => {
-                setCargando(false);
-            });
-    };
+    /**
+     * Función para cargar la lista de equipos disponibles desde la API
+     * Maneja estados de carga y errores
+     */
+    const cargarListaDeEquiposDisponibles = useCallback(async () => {
+        setEstadoCargandoDatos(true);
+        setEstadoErrorEnCarga(false);
 
-    const obtenerIp = async () => {
-        setCargando(true);
         try {
-            const plcResponse = await api.get(`/api/plcs/?equipo_nombre=${equipoSeleccionado}`);
-            if (!plcResponse.data.length) {
-                setError(true);
-                message.error("No se encontraron PLCs para este equipo");
-                return;
-            }
-            setPlc(plcResponse.data[0]);
-            setError(false);
+            // Obtener lista de equipos desde el endpoint
+            const respuestaEquipos = await api.get("/api/equipos/");
+            setListaEquiposDisponibles(respuestaEquipos.data);
         } catch (error) {
-            setError(true);
-            message.error("Error al obtener datos del PLC");
+            console.error("Error al cargar equipos:", error);
+            message.error("Error al cargar la lista de equipos disponibles");
+            setEstadoErrorEnCarga(true);
         } finally {
-            setCargando(false);
+            setEstadoCargandoDatos(false);
         }
-    };
-
-    const handleEquipoChange = (value: string) => {
-        if (value !== equipoSeleccionado) {
-            setEquipoSeleccionado(value);
-            setPlc(undefined);
-        }
-    };
-
-    useEffect(() => {
-        cargarCanales();
     }, []);
 
+    /**
+     * Función para obtener los datos del PLC asociado al equipo seleccionado
+     * Realiza validaciones y manejo de errores
+     */
+    const obtenerDatosDelPlcSeleccionado = useCallback(async () => {
+        if (!equipoActualmenteSeleccionado) return;
+
+        setEstadoCargandoDatos(true);
+        setEstadoErrorEnCarga(false);
+
+        try {
+            // Consultar PLC por nombre del equipo
+            const respuestaPlc = await api.get(`/api/plcs/?equipo_nombre=${equipoActualmenteSeleccionado}`);
+
+            // Validar que existan PLCs para el equipo seleccionado
+            if (!respuestaPlc.data || respuestaPlc.data.length === 0) {
+                setEstadoErrorEnCarga(true);
+                message.error(`No se encontraron PLCs configurados para el equipo: ${equipoActualmenteSeleccionado}`);
+                return;
+            }
+
+            // Tomar el primer PLC encontrado (podría mejorarse para manejar múltiples PLCs)
+            setDatosPlcSeleccionado(respuestaPlc.data[0]);
+            setEstadoErrorEnCarga(false);
+        } catch (error) {
+            console.error("Error al obtener datos del PLC:", error);
+            setEstadoErrorEnCarga(true);
+            message.error("Error al conectar con el PLC seleccionado");
+        } finally {
+            setEstadoCargandoDatos(false);
+        }
+    }, [equipoActualmenteSeleccionado]);
+
+    /**
+     * Manejador para el cambio de selección de equipo
+     * Resetea el PLC seleccionado cuando cambia el equipo
+     *
+     * @param nuevoEquipoSeleccionado - Nombre del nuevo equipo seleccionado
+     */
+    const manejarCambioDeEquipo = useCallback(
+        (nuevoEquipoSeleccionado: string) => {
+            // Solo actualizar si realmente cambió la selección
+            if (nuevoEquipoSeleccionado !== equipoActualmenteSeleccionado) {
+                setEquipoActualmenteSeleccionado(nuevoEquipoSeleccionado);
+                // Limpiar datos del PLC anterior
+                setDatosPlcSeleccionado(undefined);
+                setEstadoErrorEnCarga(false);
+            }
+        },
+        [equipoActualmenteSeleccionado]
+    );
+
+    // Efecto para cargar equipos al montar el componente
     useEffect(() => {
-        if (!equipoSeleccionado) return;
-        obtenerIp();
-    }, [equipoSeleccionado]);
+        cargarListaDeEquiposDisponibles();
+    }, [cargarListaDeEquiposDisponibles]);
+
+    // Efecto para obtener datos del PLC cuando cambia el equipo seleccionado
+    useEffect(() => {
+        obtenerDatosDelPlcSeleccionado();
+    }, [obtenerDatosDelPlcSeleccionado]);
+
+    // Determinar el título según el tipo de permiso
+    const tituloSegunPermiso = tipoPermiso === "SI" ? "Telemetría - Control Completo" : "Visualización - Solo Lectura";
+
+    // Renderizado condicional basado en estados
+    if (estadoErrorEnCarga) {
+        return (
+            <Result
+                status="error"
+                title="Error al cargar datos de telemetría"
+                subTitle="Verifique la conexión y vuelva a intentar"
+            />
+        );
+    }
+
+    if (estadoCargandoDatos) {
+        return (
+            <Result
+                icon={<LoadingOutlined />}
+                title="Cargando datos de telemetría..."
+                subTitle="Por favor espere mientras se establecen las conexiones"
+            />
+        );
+    }
 
     return (
-        <>
-            {error && <Result status="error" title="Error al cargar datos" />}
-            {cargando && <Result icon={<LoadingOutlined />} title="Cargando..." />}
-            {!cargando && !error && (
-                <>
-                    <Flex justify="space-between" align="center" style={{ marginBottom: 20 }}>
-                        <div style={{ width: "100%" }}>
-                            <Title level={2}>
-                                {tipoPermiso === "SI" ? "Telemetría" : "Visualización (Solo lectura)"}
-                            </Title>
-                            <Select
-                                size="large"
-                                placeholder="Seleccionar PLC"
-                                onChange={handleEquipoChange}
-                                value={equipoSeleccionado}
-                                style={{ width: "50%", marginBottom: 20 }}
-                            >
-                                {equipos.map((equipo) => (
-                                    <Select.Option key={equipo.id} value={equipo.nombre}>
-                                        {equipo.nombre}
-                                    </Select.Option>
-                                ))}
-                            </Select>
-                        </div>
-                    </Flex>
-                    {equipoSeleccionado && plc && (
-                        <DashboardRT id_plc={plc?.id} ip_plc={plc?.ip} port_plc={plc?.port} />
-                    )}
-                </>
+        <div>
+            {/* Encabezado con título y selector de equipos */}
+            <Flex justify="space-between" align="start" style={{ marginBottom: 24, width: "100%" }} vertical>
+                <Title level={2} style={{ marginBottom: 16 }}>
+                    {tituloSegunPermiso}
+                </Title>
+
+                <Select
+                    size="large"
+                    placeholder="Seleccione un equipo para monitorear"
+                    onChange={manejarCambioDeEquipo}
+                    value={equipoActualmenteSeleccionado}
+                    style={{
+                        width: "100%",
+                        maxWidth: 400,
+                        marginBottom: 24,
+                    }}
+                    showSearch
+                >
+                    {listaEquiposDisponibles.map((equipo) => (
+                        <Select.Option key={equipo.id} value={equipo.nombre}>
+                            {equipo.nombre}
+                        </Select.Option>
+                    ))}
+                </Select>
+                <Button type="primary" onClick={guardarLayoutManual}>
+                    Guardar Layout
+                </Button>
+            </Flex>
+
+            {/* Dashboard de telemetría - solo se muestra si hay equipo y PLC seleccionados */}
+            {equipoActualmenteSeleccionado && datosPlcSeleccionado && (
+                <DashboardRT
+                    id_plc={datosPlcSeleccionado.id}
+                    ip_plc={datosPlcSeleccionado.ip}
+                    port_plc={datosPlcSeleccionado.port}
+                />
             )}
-        </>
+
+            {/* Mensaje informativo cuando no hay selección */}
+            {!equipoActualmenteSeleccionado && !estadoCargandoDatos && (
+                <Flex justify="center" align="center" style={{ marginTop: 24 }}>
+                    <Typography.Text type="secondary">
+                        Seleccione un equipo para comenzar el monitoreo de telemetría
+                    </Typography.Text>
+                </Flex>
+            )}
+        </div>
     );
 };
 
