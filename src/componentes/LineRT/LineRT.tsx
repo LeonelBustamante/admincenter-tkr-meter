@@ -1,5 +1,5 @@
 import { LoadingOutlined, ReloadOutlined } from "@ant-design/icons";
-import { Button, message, Result } from "antd";
+import { Button, Card, Checkbox, Col, Descriptions, Divider, GetProp, message, Result, Row } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Layout, Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
@@ -21,16 +21,16 @@ interface DashboardRTProps {
     port_plc?: number;
 }
 
-const BREAKPOINTS = { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 };
-const COLUMNS_CONFIG = { lg: 4, md: 4, sm: 3, xs: 2, xxs: 1 };
-const DEFAULT_CARD_CONFIG = { w: 1, h: 1, minW: 1, minH: 1, maxW: 4, maxH: 4 };
+const PUNTOS_DE_QUIEBRE = { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 };
+const COFIGURACION_COLUMNAS = { lg: 4, md: 4, sm: 4, xs: 4, xxs: 4 };
+const TAMANIO_CARD_DEFAULT = { w: 1, h: 1, minW: 1, minH: 1, maxW: 1, maxH: 1 };
 
 /**
  * Genera un layout por defecto para los canales recibidos
  * ORDEN HORIZONTAL: Distribuye las tarjetas de izquierda a derecha
  */
 const generarLayoutPorDefecto = (canalesOrdenados: ICanal[]): Layout[] => {
-    const tarjetasPorFila = Math.floor(COLUMNS_CONFIG.lg / DEFAULT_CARD_CONFIG.w);
+    const tarjetasPorFila = Math.floor(COFIGURACION_COLUMNAS.lg / TAMANIO_CARD_DEFAULT.w);
 
     const layout = canalesOrdenados.map((canal, index) => {
         const filaActual = Math.floor(index / tarjetasPorFila);
@@ -38,9 +38,9 @@ const generarLayoutPorDefecto = (canalesOrdenados: ICanal[]): Layout[] => {
 
         const item = {
             i: canal.id.toString(),
-            x: posicionEnFila * DEFAULT_CARD_CONFIG.w,
-            y: filaActual * DEFAULT_CARD_CONFIG.h,
-            ...DEFAULT_CARD_CONFIG,
+            x: posicionEnFila * TAMANIO_CARD_DEFAULT.w,
+            y: filaActual * TAMANIO_CARD_DEFAULT.h,
+            ...TAMANIO_CARD_DEFAULT,
         };
 
         return item;
@@ -54,7 +54,7 @@ const generarLayoutPorDefecto = (canalesOrdenados: ICanal[]): Layout[] => {
  * Si existe layout guardado, lo usa. Si no, genera uno por defecto.
  */
 const cargarLayoutDesdeStorage = (canales: ICanal[], id_plc: number): { [key: string]: Layout[] } => {
-    const claveLayoutLocalStorage = `grid-layout-horizontal-plc-${id_plc}`;
+    const claveLayoutLocalStorage = `grid-layout-line-plc-${id_plc}`;
 
     try {
         const layoutGuardado = localStorage.getItem(claveLayoutLocalStorage);
@@ -98,26 +98,9 @@ const cargarLayoutDesdeStorage = (canales: ICanal[], id_plc: number): { [key: st
     const layoutsCompletos = {
         lg: layoutPorDefecto,
         md: layoutPorDefecto,
-        sm: layoutPorDefecto.map((item) => ({
-            ...item,
-            w: 1,
-            h: 1,
-            x: item.x > 2 ? item.x - Math.floor(item.x / 3) * 3 : item.x,
-        })),
-        xs: layoutPorDefecto.map((item, index) => ({
-            ...item,
-            w: 1,
-            h: 1,
-            x: index % 2,
-            y: Math.floor(index / 2),
-        })),
-        xxs: layoutPorDefecto.map((item, index) => ({
-            ...item,
-            w: 1,
-            h: 1,
-            x: 0,
-            y: index,
-        })),
+        sm: layoutPorDefecto,
+        xs: layoutPorDefecto,
+        xxs: layoutPorDefecto,
     };
 
     // Guardar el layout por defecto
@@ -129,12 +112,17 @@ const cargarLayoutDesdeStorage = (canales: ICanal[], id_plc: number): { [key: st
  * Componente principal del Dashboard en Tiempo Real
  * Muestra sensores de PLC en una grilla redimensionable y arrastrable
  */
-const DashboardRT: React.FC<DashboardRTProps> = ({ ip_plc, id_plc, port_plc = 502 }) => {
+const LineRT: React.FC<DashboardRTProps> = ({ ip_plc, id_plc, port_plc = 502 }) => {
     // Estados principales
     const [canalesDisponibles, setCanalesDisponibles] = useState<ICanal[]>([]);
     const [layoutsGrid, setLayoutsGrid] = useState<{ [key: string]: Layout[] }>({});
     const [cargandoCanales, setCargandoCanales] = useState(true);
     const [errorCarga, setErrorCarga] = useState<string | null>(null);
+    const [canalesSeleccionados, setCanalesSeleccionados] = useState<number[]>(
+        localStorage.getItem(`canales-seleccionados-plc-${id_plc}`)
+            ? JSON.parse(localStorage.getItem(`canales-seleccionados-plc-${id_plc}`)!)
+            : []
+    );
 
     // Hook personalizado para conexión WebSocket con el PLC
     const {
@@ -188,10 +176,9 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ ip_plc, id_plc, port_plc = 50
      */
     const manejarCambioLayout = useCallback(
         (layoutActual: Layout[], todosLosLayouts: { [key: string]: Layout[] }) => {
-            console.log("💾 Guardando cambios de layout:", todosLosLayouts);
             setLayoutsGrid(todosLosLayouts);
 
-            const claveLayoutLocalStorage = `grid-layout-horizontal-plc-${id_plc}`;
+            const claveLayoutLocalStorage = `grid-layout-line-plc-${id_plc}`;
             localStorage.setItem(claveLayoutLocalStorage, JSON.stringify(todosLosLayouts));
         },
         [id_plc]
@@ -206,40 +193,63 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ ip_plc, id_plc, port_plc = 50
         cargarCanalesDesdeAPI();
     }, [reconectarSocket, cargarCanalesDesdeAPI]);
 
-    /**
-     * 🆕 FUNCIÓN ADICIONAL: Resetear layout a valores por defecto
-     */
-    const resetearLayout = useCallback(() => {
-        if (canalesDisponibles.length === 0) {
-            message.warning("No hay canales cargados para resetear");
-            return;
+    useEffect(() => {
+        const claveSeleccionLocalStorage = `canales-seleccionados-plc-${id_plc}`;
+        localStorage.setItem(claveSeleccionLocalStorage, JSON.stringify(canalesSeleccionados));
+    }, [canalesSeleccionados, id_plc]);
+
+    useEffect(() => {
+        if (canalesDisponibles.length > 0) {
+            const claveSeleccionLocalStorage = `canales-seleccionados-plc-${id_plc}`;
+            const seleccionGuardada = localStorage.getItem(claveSeleccionLocalStorage);
+
+            if (seleccionGuardada) {
+                try {
+                    const seleccionParseada = JSON.parse(seleccionGuardada);
+                    const idsDisponibles = canalesDisponibles.map((c) => c.id);
+                    // Filtrar para evitar IDs huérfanos
+                    const seleccionValida = seleccionParseada.filter((id: number) => idsDisponibles.includes(id));
+                    setCanalesSeleccionados(seleccionValida);
+                } catch (e) {
+                    console.warn("Error al leer selección de canales:", e);
+                    setCanalesSeleccionados(canalesDisponibles.map((c) => c.id)); // fallback
+                }
+            } else {
+                setCanalesSeleccionados(canalesDisponibles.map((c) => c.id)); // si no hay nada guardado, seleccionar todos
+            }
         }
-
-        const claveLayoutLocalStorage = `grid-layout-horizontal-plc-${id_plc}`;
-        localStorage.removeItem(claveLayoutLocalStorage);
-
-        const layoutsCompletos = cargarLayoutDesdeStorage(canalesDisponibles, id_plc);
-        setLayoutsGrid(layoutsCompletos);
-
-        message.success("Layout reseteado a valores por defecto");
     }, [canalesDisponibles, id_plc]);
 
     /**
      * Memoización de las tarjetas de sensores
      */
     const tarjetasSensores = useMemo(() => {
-        const tarjetas = canalesDisponibles.map((canal) => {
-            const valorActualSensor = datosSensor.value?.[canal.posicion - 1] ?? 0;
+        const canalesFiltrados =
+            canalesSeleccionados.length > 0
+                ? canalesDisponibles.filter((canal) => canalesSeleccionados.includes(canal.id))
+                : []; // Si no hay selección, muestra todos por defecto
+
+        return canalesFiltrados.map((canal) => {
+            const valorActualSensor = datosSensor.value[canal.posicion - 1] ?? 0;
+
+            canal.tipo_vista = "chart";
 
             return (
                 <div key={canal.id.toString()}>
-                    <SensorCard canal={canal} cargando={conectandoSocket} ultimoValor={valorActualSensor} />
+                    <SensorCard
+                        canal={canal}
+                        cargando={conectandoSocket}
+                        ultimoValor={valorActualSensor}
+                        ocultarDetalles
+                    />
                 </div>
             );
         });
+    }, [canalesDisponibles, datosSensor.value, conectandoSocket, canalesSeleccionados]);
 
-        return tarjetas;
-    }, [canalesDisponibles, datosSensor.value, conectandoSocket]);
+    const manjearCheckboxes: GetProp<typeof Checkbox.Group, "onChange"> = (checkedValues) => {
+        setCanalesSeleccionados(checkedValues as number[]);
+    };
 
     // Manejo de estados de error
     if (errorCarga || errorSocket) {
@@ -280,26 +290,48 @@ const DashboardRT: React.FC<DashboardRTProps> = ({ ip_plc, id_plc, port_plc = 50
     }
 
     return (
-        <ResponsiveGridLayout
-            className="layout"
-            layouts={layoutsGrid}
-            onLayoutChange={manejarCambioLayout}
-            breakpoints={BREAKPOINTS}
-            cols={COLUMNS_CONFIG}
-            rowHeight={300}
-            margin={[16, 16]}
-            containerPadding={[0, 0]}
-            isDraggable={true}
-            isResizable={true}
-            useCSSTransforms={true}
-            preventCollision={false}
-            compactType="vertical"
-            draggableCancel=".no-drag"
-            draggableHandle=".drag-handle"
-        >
-            {tarjetasSensores}
-        </ResponsiveGridLayout>
+        <Row gutter={[16, 16]}>
+            <Col span={4}>
+                <Card title={"Seleccionar Canales"}>
+                    <Checkbox.Group onChange={manjearCheckboxes} value={canalesSeleccionados}>
+                        <Row gutter={[8, 8]}>
+                            {canalesDisponibles.map((canal) => (
+                                <Col span={24} key={canal.id}>
+                                    <Checkbox value={canal.id}>{canal.nombre}</Checkbox>
+                                </Col>
+                            ))}
+                        </Row>
+                    </Checkbox.Group>
+                    <Divider />
+                    <Descriptions title="PLC" size="small" column={1}>
+                        <Descriptions.Item label="IP">{ip_plc}</Descriptions.Item>
+                        <Descriptions.Item label="Puerto">{port_plc}</Descriptions.Item>
+                    </Descriptions>
+                </Card>
+            </Col>
+            <Col span={20}>
+                <ResponsiveGridLayout
+                    className="layout"
+                    layouts={layoutsGrid}
+                    onLayoutChange={manejarCambioLayout}
+                    breakpoints={PUNTOS_DE_QUIEBRE}
+                    cols={COFIGURACION_COLUMNAS}
+                    rowHeight={300}
+                    margin={[16, 16]}
+                    containerPadding={[0, 0]}
+                    isDraggable={true}
+                    isResizable={true}
+                    useCSSTransforms={true}
+                    preventCollision={false}
+                    compactType="vertical"
+                    draggableCancel=".no-drag"
+                    draggableHandle=".drag-handle"
+                >
+                    {tarjetasSensores}
+                </ResponsiveGridLayout>
+            </Col>
+        </Row>
     );
 };
 
-export default DashboardRT;
+export default LineRT;

@@ -1,7 +1,7 @@
-import { LoadingOutlined } from "@ant-design/icons";
-import { Button, Flex, message, Result, Select, Typography } from "antd";
+import { LineChartOutlined, LoadingOutlined, PieChartOutlined } from "@ant-design/icons";
+import { Button, Flex, message, Result, Select, Tabs, Typography } from "antd";
 import { useEffect, useState, useCallback } from "react";
-import { DashboardRT } from "../../componentes";
+import { DashboardRT, LineRT } from "../../componentes";
 import { api } from "../../servicios";
 import { IEquipo, IPlc } from "../../types";
 
@@ -104,6 +104,17 @@ const RT: React.FC<ITipoPermisoRT> = ({ tipoPermiso = "VER" }) => {
         [equipoActualmenteSeleccionado]
     );
 
+    /**
+     * Callback para manejar el cambio de pestaña en el dashboard
+     * Actualmente no realiza ninguna acción, pero se puede extender en el futuro
+     *
+     * @param key - Clave de la pestaña seleccionada
+     */
+    const onChange = (key: string) => {
+        // Aquí se pueden manejar acciones al cambiar de pestaña si es necesario
+        console.log("Pestaña cambiada a:", key);
+    };
+
     // Efecto para cargar equipos al montar el componente
     useEffect(() => {
         cargarListaDeEquiposDisponibles();
@@ -154,7 +165,6 @@ const RT: React.FC<ITipoPermisoRT> = ({ tipoPermiso = "VER" }) => {
                     style={{
                         width: "100%",
                         maxWidth: 400,
-                        marginBottom: 24,
                     }}
                     showSearch
                 >
@@ -168,10 +178,35 @@ const RT: React.FC<ITipoPermisoRT> = ({ tipoPermiso = "VER" }) => {
 
             {/* Dashboard de telemetría - solo se muestra si hay equipo y PLC seleccionados */}
             {equipoActualmenteSeleccionado && datosPlcSeleccionado && (
-                <DashboardRT
-                    id_plc={datosPlcSeleccionado.id}
-                    ip_plc={datosPlcSeleccionado.ip}
-                    port_plc={datosPlcSeleccionado.port}
+                <Tabs
+                    defaultActiveKey="1"
+                    items={[
+                        {
+                            key: "1",
+                            icon: <PieChartOutlined />,
+                            label: "Tarjetas",
+                            children: (
+                                <DashboardRT
+                                    id_plc={datosPlcSeleccionado.id}
+                                    ip_plc={datosPlcSeleccionado.ip}
+                                    port_plc={datosPlcSeleccionado.port}
+                                />
+                            ),
+                        },
+                        {
+                            key: "2",
+                            icon: <LineChartOutlined />,
+                            label: "Lineas",
+                            children: (
+                                <LineRT
+                                    id_plc={datosPlcSeleccionado.id}
+                                    ip_plc={datosPlcSeleccionado.ip}
+                                    port_plc={datosPlcSeleccionado.port}
+                                />
+                            ),
+                        },
+                    ]}
+                    onChange={onChange}
                 />
             )}
 

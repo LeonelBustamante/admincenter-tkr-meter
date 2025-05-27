@@ -1,24 +1,25 @@
-import { Card, Typography, Divider, Row, Col, Progress, Tooltip } from "antd";
+import { DragOutlined } from "@ant-design/icons";
+import { Card, Col, Divider, Progress, Row, Typography } from "antd";
+import dayjs from "dayjs";
+import { useEffect, useMemo, useState } from "react";
 import {
-    LineChart,
+    Tooltip,
+    CartesianGrid,
+    Cell,
     Line,
+    LineChart,
+    Pie,
+    PieChart,
+    RadialBar,
+    RadialBarChart,
+    ResponsiveContainer,
     XAxis,
     YAxis,
-    CartesianGrid,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-    RadialBarChart,
-    RadialBar,
 } from "recharts";
 import { ICanal } from "../../types";
-import { useEffect, useState, useMemo } from "react";
-import dayjs from "dayjs";
-import { DragOutlined, FullscreenOutlined } from "@ant-design/icons";
 
 const { Meta } = Card;
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 interface SensorCardProps {
     /** Configuración del canal/sensor */
@@ -27,20 +28,16 @@ interface SensorCardProps {
     cargando: boolean;
     /** Último valor recibido del sensor */
     ultimoValor: number;
+    /** Ocultar detalles del sensor */
+    ocultarDetalles?: boolean;
 }
 
-/**
- * Interfaz para los puntos de datos del gráfico histórico
- */
 interface PuntoDatoGrafico {
     tiempo: string;
     valor: number;
     timestamp: number;
 }
 
-/**
- * Configuración de colores para diferentes tipos de visualización
- */
 const COLORES_TEMA = {
     primario: "#1890ff",
     exito: "#52c41a",
@@ -49,24 +46,21 @@ const COLORES_TEMA = {
     secundario: "#8c8c8c",
 };
 
-/**
- * Límite máximo de puntos de datos a mantener en memoria
- * para evitar problemas de rendimiento
- */
-const LIMITE_PUNTOS_HISTORICOS = 100;
+const LIMITE_PUNTOS_HISTORICOS = 300;
 
-/**
- * Componente de tarjeta de sensor con múltiples visualizaciones
- * Soporta gráficos de línea, gauge, liquid y ring usando Recharts
- */
-const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor }) => {
-    // Estado para datos históricos del gráfico
+const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor, ocultarDetalles = false }) => {
     const [datosHistoricos, setDatosHistoricos] = useState<PuntoDatoGrafico[]>([]);
+    const [renderizarGraficos, setRenderizarGraficos] = useState(false);
 
-    /**
-     * Actualiza los datos históricos cuando llega un nuevo valor
-     * Mantiene solo los últimos N puntos para optimizar rendimiento
-     */
+    // 🔧 SOLUCIÓN SIMPLE: Delay para permitir que el DOM se renderice
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setRenderizarGraficos(true);
+        }, 100); // Espera 100ms para que el contenedor tenga dimensiones
+
+        return () => clearTimeout(timer);
+    }, [canal.id]);
+
     useEffect(() => {
         if (typeof ultimoValor === "number" && !isNaN(ultimoValor)) {
             const ahora = Date.now();
@@ -83,65 +77,87 @@ const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor })
         }
     }, [ultimoValor]);
 
-    /**
-     * Calcula el porcentaje del valor actual respecto al rango
-     * Útil para visualizaciones de progreso y gauge
-     */
     const porcentajeValor = useMemo(() => {
         const rango = canal.valor_maximo - canal.valor_minimo;
         if (rango === 0) return 0;
         return Math.min(100, Math.max(0, ((ultimoValor - canal.valor_minimo) / rango) * 100));
     }, [ultimoValor, canal.valor_minimo, canal.valor_maximo]);
 
-    /**
-     * Determina el color del indicador basado en umbrales
-     * Verde: 0-70%, Amarillo: 70-90%, Rojo: 90-100%
-     */
     const colorIndicador = useMemo(() => {
         if (porcentajeValor <= 70) return COLORES_TEMA.exito;
         if (porcentajeValor <= 90) return COLORES_TEMA.advertencia;
         return COLORES_TEMA.peligro;
     }, [porcentajeValor]);
 
-    /**
-     * Renderiza el gráfico de línea temporal con Recharts
-     * Optimizado para mostrar tendencias en tiempo real
-     */
-    const renderizarGraficoLinea = () => (
-        <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={datosHistoricos} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                    dataKey="tiempo"
-                    tick={{ fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                    interval="preserveStartEnd"
-                />
-                <YAxis
-                    domain={[canal.valor_minimo, canal.valor_maximo]}
-                    tick={{ fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={40}
-                />
-                <Line
-                    type="monotone"
-                    dataKey="valor"
-                    stroke={COLORES_TEMA.primario}
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 4, stroke: COLORES_TEMA.primario, strokeWidth: 2 }}
-                />
-            </LineChart>
-        </ResponsiveContainer>
-    );
+    const renderizarGraficoLinea = () => {
+        if (!renderizarGraficos) {
+            return (
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "100%",
+                        fontSize: "18px",
+                        color: colorIndicador,
+                    }}
+                >
+                    {ultimoValor} {canal.unidad}
+                </div>
+            );
+        }
 
-    /**
-     * Renderiza un gauge circular usando RadialBarChart
-     * Muestra el valor actual como porcentaje del rango
-     */
+        return (
+            <ResponsiveContainer width="100%" height={180} minWidth={200}>
+                <LineChart data={datosHistoricos} syncId={"id"} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <Tooltip />
+                    <XAxis
+                        dataKey="tiempo"
+                        tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                        interval="preserveStartEnd"
+                    />
+                    <YAxis
+                        domain={[canal.valor_minimo, canal.valor_maximo]}
+                        tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={40}
+                    />
+                    <Line
+                        type="monotone"
+                        dataKey="valor"
+                        stroke={COLORES_TEMA.primario}
+                        strokeWidth={1}
+                        isAnimationActive={false}
+                        dot={false}
+                        activeDot={{ r: 1, stroke: COLORES_TEMA.primario, strokeWidth: 2 }}
+                    />
+                </LineChart>
+            </ResponsiveContainer>
+        );
+    };
+
     const renderizarGaugeCircular = () => {
+        if (!renderizarGraficos) {
+            return (
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "100%",
+                        fontSize: "18px",
+                        color: colorIndicador,
+                    }}
+                >
+                    {ultimoValor} {canal.unidad}
+                </div>
+            );
+        }
+
         const datosGauge = [
             {
                 nombre: canal.nombre,
@@ -151,7 +167,7 @@ const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor })
         ];
 
         return (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={180} minWidth={150}>
                 <RadialBarChart
                     cx="50%"
                     cy="50%"
@@ -161,7 +177,7 @@ const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor })
                     startAngle={90}
                     endAngle={-270}
                 >
-                    <RadialBar minAngle={15} clockWise dataKey="valor" cornerRadius={10} fill={colorIndicador} />
+                    <RadialBar dataKey="valor" cornerRadius={10} fill={colorIndicador} />
                     <text
                         x="50%"
                         y="50%"
@@ -187,18 +203,31 @@ const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor })
         );
     };
 
-    /**
-     * Renderiza una visualización líquida usando PieChart
-     * Simula un medidor de líquido con efectos visuales
-     */
     const renderizarVisualizacionLiquida = () => {
+        if (!renderizarGraficos) {
+            return (
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "100%",
+                        fontSize: "18px",
+                        color: colorIndicador,
+                    }}
+                >
+                    {ultimoValor} {canal.unidad}
+                </div>
+            );
+        }
+
         const datosLiquido = [
             { nombre: "Lleno", valor: porcentajeValor, fill: COLORES_TEMA.primario },
             { nombre: "Vacío", valor: 100 - porcentajeValor, fill: "#f0f0f0" },
         ];
 
         return (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={180} minWidth={150}>
                 <PieChart>
                     <Pie
                         data={datosLiquido}
@@ -237,10 +266,6 @@ const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor })
         );
     };
 
-    /**
-     * Renderiza un anillo de progreso simple
-     * Alternativa minimalista para espacios reducidos
-     */
     const renderizarAnilloProgreso = () => (
         <div
             style={{
@@ -267,11 +292,8 @@ const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor })
         </div>
     );
 
-    /**
-     * Selecciona el componente de visualización según el tipo configurado
-     */
     const seleccionarComponenteVisualizacion = () => {
-        switch (canal.tipo_vista) {
+        switch (canal.tipo_vista.toLowerCase()) {
             case "chart":
                 return renderizarGraficoLinea();
             case "gauge":
@@ -310,74 +332,89 @@ const SensorCard: React.FC<SensorCardProps> = ({ canal, cargando, ultimoValor })
             }}
             extra={
                 <div className="drag-handle" style={{ cursor: "grab" }}>
-                    <Tooltip title="Arrastra para mover la tarjeta">
-                        <DragOutlined />
-                    </Tooltip>
+                    <DragOutlined />
                 </div>
             }
         >
             <Row gutter={[16, 16]} style={{ height: "100%" }}>
-                {/* Panel de información del sensor */}
-                <Col xs={24} sm={8} md={8} lg={8} xl={8}>
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                        <Meta description={<Text type="secondary">Min. {canal.valor_minimo}</Text>} />
-                        <Meta description={<Text type="secondary">Max. {canal.valor_maximo}</Text>} />
-                        <Meta description={<Text type="secondary">Unidad {canal.unidad}</Text>} />
+                {!ocultarDetalles && (
+                    <Col xs={24} sm={8} md={8} lg={8} xl={8}>
+                        <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                            <Meta description={<Text type="secondary">Min. {canal.valor_minimo}</Text>} />
+                            <Meta description={<Text type="secondary">Max. {canal.valor_maximo}</Text>} />
+                            <Meta description={<Text type="secondary">Unidad {canal.unidad}</Text>} />
 
-                        <Divider />
+                            <Divider />
 
-                        {/* Valor actual destacado */}
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                            <Text
-                                style={{
-                                    fontSize: "24px",
-                                    fontWeight: "bold",
-                                    color: colorIndicador,
-                                    textAlign: "center",
-                                }}
+                            <div
+                                style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}
                             >
-                                {ultimoValor}
-                            </Text>
-                            <Text
-                                style={{
-                                    fontSize: "14px",
-                                    textAlign: "center",
-                                    marginTop: "4px",
-                                }}
-                                type="secondary"
-                            >
-                                {canal.unidad}
-                            </Text>
-
-                            {/* Barra de progreso lineal */}
-                            <div style={{ marginTop: "16px" }}>
-                                <Progress
-                                    percent={Math.round(porcentajeValor)}
-                                    strokeColor={colorIndicador}
-                                    size="small"
-                                    showInfo={false}
-                                />
-                                <div
+                                <Text
                                     style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        fontSize: "10px",
-                                        color: "#8c8c8c",
-                                        marginTop: "4px",
+                                        fontSize: "24px",
+                                        fontWeight: "bold",
+                                        color: colorIndicador,
+                                        textAlign: "center",
                                     }}
                                 >
-                                    <span>{canal.valor_minimo}</span>
-                                    <span>{Math.round(porcentajeValor)}%</span>
-                                    <span>{canal.valor_maximo}</span>
+                                    {ultimoValor}
+                                </Text>
+                                <Text
+                                    style={{
+                                        fontSize: "14px",
+                                        textAlign: "center",
+                                        marginTop: "4px",
+                                    }}
+                                    type="secondary"
+                                >
+                                    {canal.unidad}
+                                </Text>
+
+                                <div style={{ marginTop: "16px" }}>
+                                    <Progress
+                                        percent={Math.round(porcentajeValor)}
+                                        strokeColor={colorIndicador}
+                                        size="small"
+                                        showInfo={false}
+                                    />
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            fontSize: "10px",
+                                            color: "#8c8c8c",
+                                            marginTop: "4px",
+                                        }}
+                                    >
+                                        <span>{canal.valor_minimo}</span>
+                                        <span>{Math.round(porcentajeValor)}%</span>
+                                        <span>{canal.valor_maximo}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </Col>
+                    </Col>
+                )}
 
-                {/* Panel de visualización gráfica */}
-                <Col xs={24} sm={16} md={16} lg={16} xl={16}>
-                    <div style={{ height: "200px", minHeight: "200px" }}>{seleccionarComponenteVisualizacion()}</div>
+                <Col
+                    xs={24}
+                    sm={ocultarDetalles ? 24 : 16}
+                    md={ocultarDetalles ? 24 : 16}
+                    lg={ocultarDetalles ? 24 : 16}
+                    xl={ocultarDetalles ? 24 : 16}
+                >
+                    {/* Contenedor con altura fija para evitar problemas de dimensiones */}
+                    <div
+                        style={{
+                            height: "200px",
+                            width: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        {seleccionarComponenteVisualizacion()}
+                    </div>
                 </Col>
             </Row>
         </Card>

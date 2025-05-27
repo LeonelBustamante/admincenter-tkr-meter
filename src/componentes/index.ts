@@ -1,5 +1,6 @@
 export { default as BotonCerrarSesion } from "./BotonCerrarSesion";
 export { default as DashboardRT } from "./DashboardRT";
+export { default as LineRT } from "./LineRT";
 export { default as FormularioLogin } from "./FormularioLogin";
 export { default as MenuNavegacion } from "./MenuNavegacion";
 export { default as ModalNota } from "./ModalNota";
