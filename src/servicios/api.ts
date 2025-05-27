@@ -14,7 +14,7 @@ const obtenerCSRFToken = (): string | null => {
 };
 
 const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://192.168.2.114:8000",
   withCredentials: true, // Asegura que se envíen las cookies
 });
 
