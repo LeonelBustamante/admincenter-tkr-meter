@@ -3,7 +3,7 @@ import { Button, Flex, message, Result, Select, Tabs, Typography } from "antd";
 import { useEffect, useState, useCallback } from "react";
 import { DashboardRT, LineRT } from "../../componentes";
 import { api } from "../../servicios";
-import { IEquipo, IPlc } from "../../types";
+import { IEquipo, IPlc, TipoPermiso } from "../../types";
 
 const { Title } = Typography;
 
@@ -13,7 +13,7 @@ const { Title } = Typography;
  */
 interface ITipoPermisoRT {
     /** Define el nivel de acceso: "VER" para solo lectura, "SI" para telemetría completa */
-    tipoPermiso?: "VER" | "SI";
+    tipoPermiso?: TipoPermiso;
 }
 
 /**

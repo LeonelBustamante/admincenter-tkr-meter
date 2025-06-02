@@ -1,261 +1,302 @@
 import { EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, message, Space, Table, Typography } from "antd";
+import { Button, Card, message, Space, Table, Typography } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../servicios";
-import ModalCanal from "./modals/ModalCanal";
+import ModalCanal from "./modals/ModalCanal/ModalCanal";
 import ModalCliente from "./modals/ModalCliente";
 import ModalEquipo from "./modals/ModalEquipo";
 import ModalNota from "./modals/ModalNotas";
 import ModalPLC from "./modals/ModalPLC";
 import ModalUbicacion from "./modals/ModalUbicacion";
 
-interface ITablaCrud {
+const { Text } = Typography;
+
+// Tipos principales
+interface TablaCrudProps {
     endpoint: string;
-    permisoCrud: string;
+    permisoCrud: "SI" | "NO";
 }
 
-interface Elemento {
-    [key: string]: any;
+interface DataRecord {
+    id: string | number;
+    [key: string]: string | number | boolean | Date | null | undefined;
 }
 
-const TablaCrud: React.FC<ITablaCrud> = ({ endpoint, permisoCrud }) => {
-    const [cargando, setCargando] = useState<boolean>(false);
-    const [datos, setDatos] = useState<Elemento[]>([]);
-    const [messageAPI, contextHolder] = message.useMessage();
+interface ApiError {
+    response?: {
+        data?: Record<string, string[]> | string;
+    };
+    message?: string;
+}
 
+interface ModalProps {
+    visible: boolean;
+    onCancel: () => void;
+    onSubmit: (valores: Record<string, unknown>) => Promise<void>;
+    initialValues: DataRecord | null;
+}
+
+type EntityType = "canales" | "clientes" | "equipos" | "notas" | "plcs" | "ubicaciones";
+
+// Mapeo de títulos para entidades
+const ENTITY_TITLES: Record<EntityType, string> = {
+    canales: "Canales",
+    clientes: "Clientes",
+    equipos: "Equipos",
+    notas: "Notas",
+    plcs: "PLC",
+    ubicaciones: "Ubicaciones",
+} as const;
+
+// Mapeo de headers personalizados
+const CUSTOM_HEADERS: Record<string, string> = {
+    port: "Puerto",
+    posicion: "Pos.",
+    lR3S: "Regla 3 simple",
+    lactivo: "Activo",
+} as const;
+
+// Campos que deben ser excluidos de las columnas
+const EXCLUDED_FIELDS = new Set(["password", "id", "equipo", "canal", "plc", "cliente"]);
+
+const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
+    const [loading, setLoading] = useState<boolean>(false);
+    const [data, setData] = useState<DataRecord[]>([]);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
-    const [elementoEditando, setElementoEditando] = useState<Elemento | null>(null);
-    const tipoEntidad = endpoint.split("/")[2];
+    const [editingElement, setEditingElement] = useState<DataRecord | null>(null);
+    const [messageApi, contextHolder] = message.useMessage();
 
-    // Función para identificar el campo ID correcto según el tipo de entidad
-    const getIdFieldName = (): string => {
-        const idMappings: Record<string, string> = {
-            canales: "id",
-            clientes: "id",
-            equipos: "id",
-            plcs: "id",
-            notas: "id",
-            ubicaciones: "id",
-        };
-
-        return idMappings[tipoEntidad] || "id";
-    };
-
-    const cargarDatos = () => {
-        setCargando(true);
-        api.get(endpoint)
-            .then((response) => {
-                setDatos(response.data);
-            })
-            .catch((error) => {
-                console.error("Error al cargar datos:", error);
-                messageAPI.error("Error al cargar datos");
-            })
-            .finally(() => {
-                setCargando(false);
-            });
-    };
-
-    useEffect(() => {
-        cargarDatos();
+    const entityType = useMemo((): EntityType => {
+        const pathSegments = endpoint.split("/");
+        const type = pathSegments[2] as EntityType;
+        return Object.keys(ENTITY_TITLES).includes(type) ? type : "equipos";
     }, [endpoint]);
 
-    const formatearHeaderTable = (key: string) => {
-        let respuesta = key.charAt(0).toUpperCase() + key.slice(1);
-        respuesta = respuesta.replace("_", " ");
+    // Función para formatear headers de tabla
+    const formatTableHeader = useCallback((key: string): string => {
+        const customHeader = CUSTOM_HEADERS[key];
+        if (customHeader) return customHeader;
 
-        if (key === "dtfechacreacion") respuesta = "Fecha de Creación";
-        if (key === "port") respuesta = "Puerto";
-        if (key === "lactivo") respuesta = "Activo";
-        return respuesta;
-    };
+        const formatted = key.charAt(0).toUpperCase() + key.slice(1);
+        return formatted.replace(/_/g, " ");
+    }, []);
 
-    const abrirModalCrear = () => {
-        setElementoEditando(null);
-        setModalVisible(true);
-    };
+    // Función para cargar datos
+    const loadData = useCallback(async (): Promise<void> => {
+        setLoading(true);
 
-    const abrirModalEditar = (elemento: Elemento) => {
-        // Guardar el elemento para editar
-        setElementoEditando(elemento);
-        setModalVisible(true);
-    };
-
-    const cerrarModal = () => {
-        setModalVisible(false);
-    };
-
-    // Función para manejar el envío del formulario
-    const handleSubmit = async (valores: any) => {
         try {
-            // Transformar datos según el tipo de entidad
-            let datosTransformados = { ...valores };
-
-            if (elementoEditando) {
-                // Obtener el nombre del campo ID y el valor
-                const idFieldName = getIdFieldName();
-
-                const idValue = elementoEditando[idFieldName];
-
-                // Asegurarse de que el slash final esté presente en el endpoint base
-                const baseEndpoint = endpoint.endsWith("/") ? endpoint : `${endpoint}/`;
-
-                // Realizar la petición PUT con los datos transformados
-                await api.patch(`${baseEndpoint}${idValue}/`, datosTransformados);
-                messageAPI.success("Registro actualizado con éxito");
-            } else {
-                // Creación - usar los datos transformados
-                await api.post(endpoint, datosTransformados);
-                messageAPI.success("Registro creado con éxito");
-            }
-            cerrarModal();
-            cargarDatos(); // Recargar datos después de la operación
-        } catch (error: any) {
-            // Mostrar mensaje de error más específico si está disponible
-            if (error.response?.data) {
-                if (typeof error.response.data === "object") {
-                    const errorMessages = Object.entries(error.response.data)
-                        .map(([field, msgs]) => `${field}: ${msgs}`)
-                        .join(", ");
-                    messageAPI.error(`Error: ${errorMessages}`);
-                } else {
-                    messageAPI.error(`Error: ${error.response.data}`);
-                }
-            } else {
-                messageAPI.error("Error al procesar la operación");
-            }
-            console.error("Error:", error);
+            const response = await api.get<DataRecord[]>(endpoint);
+            setData(response.data);
+        } catch (error) {
+            console.error("Error al cargar datos:", error);
+            messageApi.error("Error al cargar los datos");
+        } finally {
+            setLoading(false);
         }
-    };
+    }, [endpoint, messageApi]);
 
-    // Configuración de columnas según los datos disponibles
-    const generarColumnas = () => {
-        if (datos.length === 0) return [];
+    // Efecto para cargar datos al montar o cambiar endpoint
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
-        // Columnas básicas basadas en los datos
-        const columnas = Object.keys(datos[0])
-            .filter(
-                (key) =>
-                    !key.includes("password") &&
-                    !key.includes("id") &&
-                    !key.includes("equipo") &&
-                    !key.includes("canal") &&
-                    !key.includes("plc") &&
-                    !key.includes("cliente")
-            )
+    // Handlers para modales
+    const openCreateModal = useCallback((): void => {
+        setEditingElement(null);
+        setModalVisible(true);
+    }, []);
+
+    const openEditModal = useCallback((element: DataRecord): void => {
+        setEditingElement(element);
+        setModalVisible(true);
+    }, []);
+
+    const closeModal = useCallback((): void => {
+        setModalVisible(false);
+        setEditingElement(null);
+    }, []);
+
+    // Handler para envío de formulario
+    const handleSubmit = useCallback(
+        async (values: Record<string, unknown>): Promise<void> => {
+            try {
+                const transformedData = { ...values };
+
+                if (editingElement) {
+                    // Actualizar registro existente
+                    const baseEndpoint = endpoint.endsWith("/") ? endpoint : `${endpoint}/`;
+                    await api.patch(`${baseEndpoint}${editingElement.id}/`, transformedData);
+                    messageApi.success("Registro actualizado correctamente");
+                } else {
+                    // Crear nuevo registro
+                    await api.post(endpoint, transformedData);
+                    messageApi.success("Registro creado correctamente");
+                }
+
+                closeModal();
+                await loadData();
+            } catch (error) {
+                const apiError = error as ApiError;
+
+                if (apiError.response?.data) {
+                    if (typeof apiError.response.data === "object") {
+                        const errorMessages = Object.entries(apiError.response.data)
+                            .map(
+                                ([field, messages]) =>
+                                    `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`
+                            )
+                            .join("; ");
+                        messageApi.error(`Error: ${errorMessages}`);
+                    } else {
+                        messageApi.error(`Error: ${apiError.response.data}`);
+                    }
+                } else {
+                    messageApi.error(apiError.message || "Error al procesar la operación");
+                }
+
+                console.error("Error en handleSubmit:", error);
+            }
+        },
+        [editingElement, endpoint, messageApi, closeModal, loadData]
+    );
+
+    // Función para renderizar valores de celdas
+    const renderCellValue = useCallback((value: unknown, key: string): React.ReactNode => {
+        // Manejar fechas
+        if (key.toLowerCase().includes("fecha") && value) {
+            const dateValue = dayjs(value as string | Date);
+            return dateValue.isValid() ? dateValue.format("DD/MM/YYYY HH:mm:ss") : <Text type="secondary">-</Text>;
+        }
+
+        // Manejar booleanos
+        if (typeof value === "boolean") {
+            return <Text type={value ? "success" : "secondary"}>{value ? "Sí" : "No"}</Text>;
+        }
+
+        // Valores nulos o undefined
+        if (value === null || value === undefined) {
+            return <Text type="secondary">-</Text>;
+        }
+
+        return value as React.ReactNode;
+    }, []);
+
+    // Generar columnas de la tabla
+    const tableColumns = useMemo((): ColumnsType<DataRecord> => {
+        if (data.length === 0) return [];
+
+        // Generar columnas basadas en las claves del primer elemento
+        const dataColumns: ColumnsType<DataRecord> = Object.keys(data[0])
+            .filter((key) => !EXCLUDED_FIELDS.has(key))
             .map((key) => ({
-                title: formatearHeaderTable(key),
+                title: formatTableHeader(key),
                 dataIndex: key,
-                key: key,
-                render: (valor: any) => {
-                    if (key.toLowerCase().includes("fecha") && valor) {
-                        return dayjs(valor).format("DD/MM/YYYY HH:mm:ss");
+                key,
+                render: (value: unknown) => renderCellValue(value, key),
+                sorter: (a: DataRecord, b: DataRecord) => {
+                    const aValue = a[key];
+                    const bValue = b[key];
+
+                    if (typeof aValue === "string" && typeof bValue === "string") {
+                        return aValue.localeCompare(bValue);
                     }
-                    if (typeof valor === "boolean") {
-                        return valor ? "Sí" : "No";
+
+                    if (typeof aValue === "number" && typeof bValue === "number") {
+                        return aValue - bValue;
                     }
-                    return valor;
+
+                    return 0;
                 },
+                ellipsis: true,
             }));
 
-        // Añadir columna de acciones
-        columnas.push({
+        // Columna de acciones
+        const actionsColumn: ColumnsType<DataRecord>[0] = {
             title: "Acciones",
-            key: "acciones",
-            render: (_: any, registro: Elemento) => (
-                <Space>
+            key: "actions",
+            width: entityType === "ubicaciones" ? 200 : 120,
+            render: (_, record: DataRecord) => (
+                <Space size="small">
                     {permisoCrud === "SI" && (
-                        <Button type="primary" icon={<EditOutlined />} onClick={() => abrirModalEditar(registro)}>
+                        <Button
+                            type="primary"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => openEditModal(record)}
+                        >
                             Editar
                         </Button>
                     )}
-                    {tipoEntidad === "ubicaciones" && (
+                    {entityType === "ubicaciones" && record.latitud && record.longitud && (
                         <Button
                             type="link"
-                            onClick={() =>
-                                window.open(
-                                    `https://www.google.com/maps/search/?api=1&query=${registro.latitud},${registro.longitud}`
-                                )
-                            }
+                            size="small"
+                            onClick={() => {
+                                const url = `https://www.google.com/maps/search/?api=1&query=${record.latitud},${record.longitud}`;
+                                window.open(url, "_blank", "noopener,noreferrer");
+                            }}
                         >
                             Ver en mapa
                         </Button>
                     )}
                 </Space>
             ),
-        });
+        };
 
-        return columnas;
-    };
+        return [...dataColumns, actionsColumn];
+    }, [data, formatTableHeader, renderCellValue, entityType, permisoCrud, openEditModal]);
 
-    // Renderizar el modal correspondiente según el tipo de entidad
-    const renderizarModal = () => {
-        const props = {
+    // Renderizar modal según tipo de entidad
+    const renderModal = useCallback((): React.ReactElement | null => {
+        const modalProps: ModalProps = {
             visible: modalVisible,
-            onCancel: cerrarModal,
+            onCancel: closeModal,
             onSubmit: handleSubmit,
-            initialValues: elementoEditando,
+            initialValues: editingElement,
         };
 
-        switch (tipoEntidad) {
-            case "canales":
-                return <ModalCanal {...props} />;
-            case "clientes":
-                return <ModalCliente {...props} />;
-            case "equipos":
-                return <ModalEquipo {...props} />;
-            case "notas":
-                return <ModalNota {...props} />;
-            case "plcs":
-                return <ModalPLC {...props} />;
-            case "ubicaciones":
-                return <ModalUbicacion {...props} />;
-            default:
-                return null;
-        }
-    };
+        const modalComponents = {
+            canales: ModalCanal,
+            clientes: ModalCliente,
+            equipos: ModalEquipo,
+            notas: ModalNota,
+            plcs: ModalPLC,
+            ubicaciones: ModalUbicacion,
+        } as const;
 
-    const obtenerTitulo = () => {
-        const titulos: Record<string, string> = {
-            canales: "Canales",
-            clientes: "Clientes",
-            equipos: "Equipos",
-            notas: "Notas",
-            plcs: "PLC",
-            ubicaciones: "Ubicaciones",
-        };
+        const ModalComponent = modalComponents[entityType];
+        return ModalComponent ? <ModalComponent {...modalProps} /> : null;
+    }, [modalVisible, closeModal, handleSubmit, editingElement, entityType]);
 
-        return titulos[tipoEntidad] || "Datos";
-    };
+    // Título de la entidad
+    const entityTitle = useMemo(() => ENTITY_TITLES[entityType], [entityType]);
 
     return (
         <>
             {contextHolder}
-            <div>
-                <Typography.Title level={1}>Tabla de {obtenerTitulo()}</Typography.Title>
-
-                {permisoCrud === "SI" && (
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={abrirModalCrear}
-                        style={{ marginBottom: 16 }}
-                    >
-                        Crear nuevo registro
-                    </Button>
-                )}
-
-                <Table
-                    dataSource={datos}
-                    columns={generarColumnas()}
+            <Card
+                title={`Tabla de ${entityTitle}`}
+                extra={
+                    permisoCrud === "SI" && (
+                        <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
+                            Crear nuevo registro
+                        </Button>
+                    )
+                }
+            >
+                <Table<DataRecord>
+                    dataSource={data}
+                    columns={tableColumns}
                     rowKey="id"
-                    loading={cargando}
-                    pagination={{ pageSize: 10 }}
+                    pagination={false}
+                    loading={loading}
+                    size="middle"
                 />
-
-                {renderizarModal()}
-            </div>
+                {renderModal()}
+            </Card>
         </>
     );
 };

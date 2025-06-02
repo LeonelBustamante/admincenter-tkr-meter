@@ -1,3 +1,5 @@
+export type TipoPermiso = "SI" | "NO" | "VER";
+
 export interface IUsuario {
     id: number;
     username: string;
@@ -10,8 +12,8 @@ export interface IUsuario {
     nombre?: string;
     apellido?: string;
     permisos: {
-        real_time: "NO" | "VER" | "SI";
-        crud: "NO" | "VER" | "SI";
+        real_time: TipoPermiso;
+        crud: TipoPermiso;
         generar_reportes: "NO" | "SI";
         gestion_usuarios: "NO" | "SI";
     };
