@@ -2,19 +2,12 @@ import { Form, Input, Modal, InputNumber, Switch, Select } from "antd";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { api } from "../../../servicios";
+import { IModalCrud } from "../types";
 
 const { Item } = Form;
 const { Option } = Select;
 
-// Interfaz para el componente
-interface ModalPLCProps {
-    visible: boolean;
-    onCancel: () => void;
-    onSubmit: (values: any) => void;
-    initialValues?: any;
-}
-
-const ModalPLC: React.FC<ModalPLCProps> = ({ visible, onCancel, onSubmit, initialValues }) => {
+const ModalPLC: React.FC<IModalCrud> = ({ visible, onCancel, onSubmit, valoresIniciales: initialValues }) => {
     const [form] = Form.useForm();
     const [equipos, setEquipos] = useState<any[]>([]);
     const [cargandoEquipos, setCargandoEquipos] = useState<boolean>(false);

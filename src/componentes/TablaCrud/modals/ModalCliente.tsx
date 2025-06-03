@@ -1,44 +1,22 @@
 import { Form, Input, Modal } from "antd";
 import { useEffect } from "react";
-import dayjs from "dayjs";
+import { IModalCrud } from "../types";
 
 const { Item } = Form;
 
-// Interfaz para el componente
-interface ModalClienteProps {
-    visible: boolean;
-    onCancel: () => void;
-    onSubmit: (values: any) => void;
-    initialValues?: any;
-}
-
-const ModalCliente: React.FC<ModalClienteProps> = ({ visible, onCancel, onSubmit, initialValues }) => {
+const ModalCliente: React.FC<IModalCrud> = ({ visible, onCancel, onSubmit, valoresIniciales }) => {
     const [form] = Form.useForm();
 
-    // Efecto para resetear y cargar el formulario cuando cambia la visibilidad
     useEffect(() => {
         if (visible) {
             form.resetFields();
-            if (initialValues) {
-                const formattedValues = {
-                    ...initialValues,
-                    dtfechacreacion: initialValues.dtfechacreacion ? dayjs(initialValues.dtfechacreacion) : undefined,
-                };
-                form.setFieldsValue(formattedValues);
-            }
+            form.setFieldsValue(valoresIniciales || {});
         }
-    }, [visible, form, initialValues]);
+    }, [visible, form, valoresIniciales]);
 
-    // Manejar envío del formulario
     const handleSubmit = async () => {
         try {
             const values = await form.validateFields();
-
-            // Formatear fecha si existe
-            if (values.dtfechacreacion) {
-                values.dtfechacreacion = values.dtfechacreacion.format("YYYY-MM-DD HH:mm:ss");
-            }
-
             onSubmit(values);
         } catch (error) {
             console.error("Error en validación:", error);
@@ -47,7 +25,7 @@ const ModalCliente: React.FC<ModalClienteProps> = ({ visible, onCancel, onSubmit
 
     return (
         <Modal
-            title={`${initialValues ? "Editar" : "Crear"} Cliente`}
+            title={`${valoresIniciales ? "Editar" : "Crear"} Cliente`}
             open={visible}
             onCancel={onCancel}
             onOk={handleSubmit}
@@ -58,7 +36,7 @@ const ModalCliente: React.FC<ModalClienteProps> = ({ visible, onCancel, onSubmit
                 <Item
                     name="nombre"
                     label="Nombre del cliente"
-                    initialValue={initialValues?.nombre || ""}
+                    initialValue={valoresIniciales?.nombre || ""}
                     rules={[{ required: true, message: "Por favor ingrese el nombre del cliente" }]}
                 >
                     <Input placeholder="Nombre del cliente" maxLength={100} />

@@ -3,19 +3,12 @@ import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { api } from "../../../servicios";
 import { EnvironmentOutlined } from "@ant-design/icons";
+import { IModalCrud } from "../types";
 
 const { Item } = Form;
 const { Option } = Select;
 
-// Interfaz para el componente
-interface ModalUbicacionProps {
-    visible: boolean;
-    onCancel: () => void;
-    onSubmit: (values: any) => void;
-    initialValues?: any;
-}
-
-const ModalUbicacion: React.FC<ModalUbicacionProps> = ({ visible, onCancel, onSubmit, initialValues }) => {
+const ModalUbicacion: React.FC<IModalCrud> = ({ visible, onCancel, onSubmit, valoresIniciales: initialValues }) => {
     const [form] = Form.useForm();
     const [equipos, setEquipos] = useState<any[]>([]);
     const [cargandoEquipos, setCargandoEquipos] = useState<boolean>(false);
@@ -188,10 +181,7 @@ const ModalUbicacion: React.FC<ModalUbicacionProps> = ({ visible, onCancel, onSu
                     </Select>
                 </Item>
 
-                <Item
-                    name="fecha_finalizacion"
-                    label="Fecha de finalización"
-                >
+                <Item name="fecha_finalizacion" label="Fecha de finalización">
                     <DatePicker
                         showTime
                         format="DD/MM/YYYY HH:mm:ss"

@@ -1,19 +1,12 @@
 import { Form, Input, Modal, Select } from "antd";
 import { useEffect, useState } from "react";
 import { api } from "../../../servicios";
+import { IModalCrud } from "../types";
 
 const { Item } = Form;
 const { Option } = Select;
 
-// Interfaz para el componente
-interface ModalEquipoProps {
-    visible: boolean;
-    onCancel: () => void;
-    onSubmit: (values: any) => void;
-    initialValues?: any;
-}
-
-const ModalEquipo: React.FC<ModalEquipoProps> = ({ visible, onCancel, onSubmit, initialValues }) => {
+const ModalEquipo: React.FC<IModalCrud> = ({ visible, onCancel, onSubmit, valoresIniciales }) => {
     const [form] = Form.useForm();
     const [clientes, setClientes] = useState<any[]>([]);
     const [cargandoClientes, setCargandoClientes] = useState<boolean>(false);
@@ -41,11 +34,11 @@ const ModalEquipo: React.FC<ModalEquipoProps> = ({ visible, onCancel, onSubmit, 
     useEffect(() => {
         if (visible) {
             form.resetFields();
-            if (initialValues) {
-                form.setFieldsValue(initialValues);
+            if (valoresIniciales) {
+                form.setFieldsValue(valoresIniciales);
             }
         }
-    }, [visible, form, initialValues]);
+    }, [visible, form, valoresIniciales]);
 
     // Manejar envío del formulario
     const handleSubmit = async () => {
@@ -59,7 +52,7 @@ const ModalEquipo: React.FC<ModalEquipoProps> = ({ visible, onCancel, onSubmit, 
 
     return (
         <Modal
-            title={`${initialValues ? "Editar" : "Crear"} Equipo`}
+            title={`${valoresIniciales ? "Editar" : "Crear"} Equipo`}
             open={visible}
             onCancel={onCancel}
             onOk={handleSubmit}
@@ -70,7 +63,7 @@ const ModalEquipo: React.FC<ModalEquipoProps> = ({ visible, onCancel, onSubmit, 
                 <Item
                     name="nombre"
                     label="Nombre del equipo"
-                    initialValue={initialValues?.nombre || ""}
+                    initialValue={valoresIniciales?.nombre || ""}
                     rules={[{ required: true, message: "Por favor ingrese el nombre del equipo" }]}
                 >
                     <Input placeholder="Nombre del equipo" maxLength={45} />
@@ -79,7 +72,7 @@ const ModalEquipo: React.FC<ModalEquipoProps> = ({ visible, onCancel, onSubmit, 
                 <Item
                     name="cliente"
                     label="Cliente"
-                    initialValue={initialValues?.cliente_nombre || ""}
+                    initialValue={valoresIniciales?.cliente_nombre || ""}
                     rules={[{ required: true, message: "Por favor seleccione un cliente" }]}
                 >
                     <Select placeholder="Seleccione un cliente" loading={cargandoClientes} allowClear>

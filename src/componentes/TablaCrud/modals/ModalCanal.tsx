@@ -1,13 +1,49 @@
 import { Flex, Form, Image, Input, InputNumber, Modal, Radio, Select, Switch, Typography } from "antd";
 import { useEffect, useState } from "react";
-import { api } from "../../../../servicios";
-import { IPlc } from "../../../../types";
-import { ModalCanalProps, TipoCanal, TipoVisualizacion } from "./types";
+import { api } from "../../../servicios";
+import { IPlc } from "../../../types";
+import { IModalCrud } from "../types";
 
 const { Item } = Form;
 const { Option } = Select;
 
-const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, initialValues }) => {
+export enum TipoCanal {
+    ANALOGICO = "ANALOGICO",
+    DIGITAL = "DIGITAL",
+}
+
+export enum TipoVisualizacion {
+    CHART = "CHART",
+    LIQUID = "LIQUID",
+    RING = "RING",
+}
+
+export interface ValoresInicialesCanal {
+    nombre?: string;
+    tipo?: TipoCanal;
+    tipo_vista?: TipoVisualizacion;
+    unidad?: string;
+    valor_minimo?: number;
+    valor_maximo?: number;
+    offset?: number;
+    max_sensor?: number;
+    escala?: number;
+    posicion?: number;
+    lR3S?: boolean;
+    formula?: string;
+    plc_ip?: string;
+    plc?: number;
+    dtfechacreacion?: any;
+}
+
+export interface ModalCanalProps {
+    visible: boolean;
+    onCancel: () => void;
+    onSubmit: (values: any) => void;
+    initialValues?: ValoresInicialesCanal;
+}
+
+const ModalCanal: React.FC<IModalCrud> = ({ visible, onCancel, onSubmit, valoresIniciales: initialValues }) => {
     const [formularioCanal] = Form.useForm();
     const [plcs, setPlcs] = useState<IPlc[]>([]);
     const [formula, setFormula] = useState<string>("");
@@ -67,7 +103,6 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                 });
             }
         } else {
-            // Cuando el modal se cierra, limpiar todo
             formularioCanal.resetFields();
             setMostrarFormula(true);
             setTipoCanalSeleccionado(TipoCanal.ANALOGICO);

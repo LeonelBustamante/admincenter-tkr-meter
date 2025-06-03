@@ -4,7 +4,7 @@ import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../servicios";
-import ModalCanal from "./modals/ModalCanal/ModalCanal";
+import ModalCanal from "./modals/ModalCanal";
 import ModalCliente from "./modals/ModalCliente";
 import ModalEquipo from "./modals/ModalEquipo";
 import ModalNota from "./modals/ModalNotas";
@@ -35,7 +35,7 @@ interface ModalProps {
     visible: boolean;
     onCancel: () => void;
     onSubmit: (valores: Record<string, unknown>) => Promise<void>;
-    initialValues: DataRecord | null;
+    valoresIniciales: DataRecord | null;
 }
 
 type EntityType = "canales" | "clientes" | "equipos" | "notas" | "plcs" | "ubicaciones";
@@ -255,7 +255,7 @@ const TablaCrud: React.FC<TablaCrudProps> = ({ endpoint, permisoCrud }) => {
             visible: modalVisible,
             onCancel: closeModal,
             onSubmit: handleSubmit,
-            initialValues: editingElement,
+            valoresIniciales: editingElement,
         };
 
         const modalComponents = {

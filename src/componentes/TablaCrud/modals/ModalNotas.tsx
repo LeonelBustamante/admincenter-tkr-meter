@@ -1,19 +1,12 @@
 import { Form, Input, Modal, DatePicker } from "antd";
 import { useEffect } from "react";
 import dayjs from "dayjs";
+import { IModalCrud } from "../types";
 
 const { Item } = Form;
 const { TextArea } = Input;
 
-// Interfaz para el componente
-interface ModalNotaProps {
-    visible: boolean;
-    onCancel: () => void;
-    onSubmit: (values: any) => void;
-    initialValues?: any;
-}
-
-const ModalNota: React.FC<ModalNotaProps> = ({ visible, onCancel, onSubmit, initialValues }) => {
+const ModalNota: React.FC<IModalCrud> = ({ visible, onCancel, onSubmit, valoresIniciales: initialValues }) => {
     const [form] = Form.useForm();
 
     // Efecto para resetear y cargar el formulario cuando cambia la visibilidad
