@@ -35,60 +35,54 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
 
     useEffect(() => {
         if (visible) {
+            // Resetear formulario primero
             formularioCanal.resetFields();
 
-            console.log("Valores iniciales:", initialValues);
-
             if (initialValues) {
-                const valoresFormulario = { ...initialValues };
-                setMostrarFormula(valoresFormulario.lR3S === true);
-                setTipoCanalSeleccionado(valoresFormulario.tipo || TipoCanal.ANALOGICO);
+                console.log("Inicializando formulario con valores:", initialValues);
+                // Establecer valores para edición
+                formularioCanal.setFieldsValue(initialValues);
+                setMostrarFormula(initialValues.lR3S !== true);
+                setTipoCanalSeleccionado(initialValues.tipo || TipoCanal.ANALOGICO);
             } else {
+                // Valores por defecto para crear nuevo
                 setTipoCanalSeleccionado(TipoCanal.ANALOGICO);
                 setMostrarFormula(true);
+                setFormula("");
+
+                // Establecer valores por defecto en el formulario
+                formularioCanal.setFieldsValue({
+                    nombre: "",
+                    tipo: TipoCanal.ANALOGICO,
+                    tipo_vista: TipoVisualizacion.RING,
+                    valor_minimo: 0,
+                    valor_maximo: 100,
+                    max_sensor: 1023,
+                    offset: 0,
+                    escala: 1,
+                    unidad: "",
+                    posicion: 0,
+                    lR3S: false,
+                    formula: "",
+                });
             }
+        } else {
+            // Cuando el modal se cierra, limpiar todo
+            formularioCanal.resetFields();
+            setMostrarFormula(true);
+            setTipoCanalSeleccionado(TipoCanal.ANALOGICO);
+            setFormula("");
         }
     }, [visible, initialValues, formularioCanal]);
 
     const manejarCambioRegla3Simple = (activarRegla3Simple: boolean): void => {
         setMostrarFormula(!activarRegla3Simple);
-        if (activarRegla3Simple) {
-            actualizarFormula();
-        } else {
-            formularioCanal.setFieldsValue({
-                formula: "",
-            });
-        }
+        if (activarRegla3Simple) actualizarFormula();
     };
 
     const manejarCambioTipoCanal = (tipoSeleccionado: TipoCanal): void => {
         setTipoCanalSeleccionado(tipoSeleccionado);
-        if (tipoSeleccionado === TipoCanal.DIGITAL) {
-            formularioCanal.setFieldsValue({
-                valor_minimo: 0,
-                valor_maximo: 1,
-                unidad: "ON/OFF",
-                escala: 100,
-                lR3S: false,
-                formula: "x",
-                tipo_vista: TipoVisualizacion.CHART,
-            });
-            setMostrarFormula(false);
-        }
-    };
-
-    /**
-     * Valores por defecto para sensores digitales
-     */
-    const valoresPorDefectoDigital = {
-        valor_minimo: 0,
-        valor_maximo: 1,
-        unidad: "ON/OFF",
-        offset: 0,
-        max_sensor: 100,
-        escala: 100,
-        lR3S: false,
-        formula: "x",
+        if (tipoSeleccionado === TipoCanal.DIGITAL) setMostrarFormula(false);
     };
 
     const actualizarFormula = (): void => {
@@ -99,41 +93,44 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
         const escala = valores.escala || 1;
 
         let tresSimple = `(x * ${valorMaximo}) / ${maxSensor}`;
-        let res;
+        let preview;
 
-        if (escala !== 100) {
-            tresSimple = `(${tresSimple}) * ${escala}`;
-        }
+        // Si se usa regla de 3 simple, ajustamos la fórmula
+        if (escala !== 100) tresSimple = `(${tresSimple}) * ${escala}`;
 
-        if (offset !== 0) {
-            tresSimple = `(${tresSimple})`;
-            tresSimple += ` - ${Math.abs(offset)}`;
-        }
+        // Si hay un offset, lo aplicamos
+        if (offset !== 0) tresSimple = `(${tresSimple}) - ${Math.abs(offset)}`;
 
-        res = `f(x) = ${tresSimple}`;
-        setFormula(res);
+        preview = `f(x) = ${tresSimple}`;
+        setFormula(preview);
     };
 
     const manejarEnvioFormulario = async (): Promise<void> => {
         try {
-            const valoresValidados = await formularioCanal.validateFields();
-
+            const valoresFormulario = await formularioCanal.validateFields();
             // Aplicar valores por defecto para sensores digitales
-            if (valoresValidados.tipo === TipoCanal.DIGITAL) {
+            if (valoresFormulario.tipo === TipoCanal.DIGITAL) {
+                // Resetea campos para digitales y aplica valores del formulario
                 const valoresFinales = {
-                    ...valoresValidados,
-                    ...valoresPorDefectoDigital,
-                    nombre: valoresValidados.nombre,
-                    tipo: valoresValidados.tipo,
-                    tipo_vista: TipoVisualizacion.CHART, // Forzar chart para digitales
-                    posicion: valoresValidados.posicion,
-                    plc: valoresValidados.plc,
-                    dtfechacreacion: valoresValidados.dtfechacreacion,
+                    ...valoresFormulario,
+                    nombre: valoresFormulario.nombre,
+                    posicion: valoresFormulario.posicion,
+                    plc: valoresFormulario.plc,
+                    tipo: "DIGITAL", // Fuerza tipo DIGITAL
+                    tipo_vista: TipoVisualizacion.CHART, // Fuerza tipo de visualización CHART
+                    unidad: "ON/OFF",
+                    valor_minimo: 0,
+                    valor_maximo: 1,
+                    offset: 0,
+                    max_sensor: 100,
+                    escala: 100,
+                    lR3S: false,
+                    formula: "x",
                 };
 
                 onSubmit(valoresFinales);
             } else {
-                onSubmit(valoresValidados);
+                onSubmit(valoresFormulario);
             }
         } catch (errorValidacion) {
             console.error("Error en la validación del formulario:", errorValidacion);
@@ -179,7 +176,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                     <Item //Tipo de Sensor
                         name="tipo"
                         label="Tipo de Sensor"
-                        initialValue={TipoCanal.ANALOGICO}
+                        initialValue={initialValues?.tipo || TipoCanal.ANALOGICO}
                         rules={[{ required: true, message: "Seleccione el tipo de sensor" }]}
                         style={{ width: "50%" }}
                     >
@@ -242,8 +239,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                             )}
                         </Item>
                     )}
-
-                    {esCampoVisible("LR3s") && (
+                    {esCampoVisible("lR3S") && (
                         <Item
                             name="lR3S"
                             label="Usar Regla de 3 Simple"
@@ -253,8 +249,9 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                         >
                             <Flex align="center" gap={8}>
                                 <Switch
+                                    checked={initialValues?.lR3S || false}
                                     onChange={manejarCambioRegla3Simple}
-                                    checkedChildren="R3S"
+                                    checkedChildren="Regla 3 Simple"
                                     unCheckedChildren="Fórmula"
                                 />
                                 {!mostrarFormula && <Typography.Text type="secondary">{formula}</Typography.Text>}
@@ -266,6 +263,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                     <Item
                         name="formula"
                         label="Fórmula de Conversión"
+                        initialValue={initialValues?.formula || ""}
                         rules={[
                             {
                                 required: !formularioCanal.getFieldValue("lR3S"),
@@ -327,7 +325,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                             <Item
                                 name="offset"
                                 label="Desplazamiento (Offset)"
-                                initialValue={0}
+                                initialValue={initialValues?.offset || 0}
                                 style={{ width: "33%" }}
                                 tooltip="Valor que se suma o resta al resultado de la conversión"
                             >
@@ -341,7 +339,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                             <Item
                                 name="escala"
                                 label="Factor de Escala"
-                                initialValue={1}
+                                initialValue={initialValues?.escala || 1}
                                 style={{ width: "33%" }}
                                 tooltip="Factor multiplicador para ajustar la escala de conversión"
                             >
@@ -356,6 +354,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                             <Item
                                 name="unidad"
                                 label="Unidad de Medida"
+                                initialValue={initialValues?.unidad || ""}
                                 style={{ width: "34%" }}
                                 rules={[{ max: 10, message: "La unidad no puede exceder 10 caracteres" }]}
                             >
@@ -385,6 +384,7 @@ const ModalCanal: React.FC<ModalCanalProps> = ({ visible, onCancel, onSubmit, in
                     <Item
                         name="plc"
                         label="PLC Asociado"
+                        initialValue={initialValues?.plc_ip || undefined}
                         rules={[{ required: true, message: "Seleccione el PLC que controlará este canal" }]}
                         style={{ width: "50%" }}
                         tooltip="Controlador PLC del cual se leerán los datos"
